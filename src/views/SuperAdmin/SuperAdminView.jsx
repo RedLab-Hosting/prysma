@@ -1,12 +1,16 @@
-import React, { useState, useEffect } from 'react';
-import { supabase } from '../../api/supabase';
-import { Plus, Building2, LayoutDashboard, Settings, Loader2 } from 'lucide-react';
+import { tenantService } from '../../api/tenantService';
+import { Plus, Building2, LayoutDashboard, Settings, Loader2, Globe } from 'lucide-react';
 
 const SuperAdminView = () => {
   const [tenants, setTenants] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
-  const [newTenant, setNewTenant] = useState({ name: '', slug: '', primaryColor: '#ea580c' });
+  const [newTenant, setNewTenant] = useState({ 
+    name: '', 
+    slug: '', 
+    primaryColor: '#ea580c',
+    customDomain: '' 
+  });
 
   useEffect(() => {
     fetchTenants();
@@ -14,25 +18,19 @@ const SuperAdminView = () => {
 
   const fetchTenants = async () => {
     setLoading(true);
-    const { data, error } = await supabase.from('tenants').select('*').order('created_at', { ascending: false });
+    const { data, error } = await tenantService.getAllTenants();
     if (data) setTenants(data);
     setLoading(false);
   };
 
   const handleCreateTenant = async (e) => {
     e.preventDefault();
-    const { data, error } = await supabase.from('tenants').insert([
-      { 
-        name: newTenant.name, 
-        slug: newTenant.slug,
-        theme: { primaryColor: newTenant.primaryColor }
-      }
-    ]);
+    const { data, error } = await tenantService.createTenant(newTenant);
     
     if (!error) {
       setShowModal(false);
       fetchTenants();
-      setNewTenant({ name: '', slug: '', primaryColor: '#ea580c' });
+      setNewTenant({ name: '', slug: '', primaryColor: '#ea580c', customDomain: '' });
     } else {
       alert(error.message);
     }
@@ -87,9 +85,14 @@ const SuperAdminView = () => {
                   </span>
                 </div>
                 <h3 className="text-xl font-bold text-slate-800 mb-1">{t.name}</h3>
-                <p className="text-sm text-slate-500 mb-4">slug: /{t.slug}</p>
+                <p className="text-sm text-slate-500 mb-2">slug: /{t.slug}</p>
+                {t.custom_domain && (
+                  <div className="flex items-center gap-1 text-xs text-blue-600 mb-4 font-medium">
+                    <Globe size={12} /> {t.custom_domain}
+                  </div>
+                )}
                 <div className="flex items-center gap-2 mb-6">
-                  <div className="w-4 h-4 rounded-full" style={{ backgroundColor: t.theme.primaryColor }}></div>
+                  <div className="w-4 h-4 rounded-full" style={{ backgroundColor: t.theme?.primaryColor }}></div>
                   <span className="text-xs text-slate-400">Color Principal</span>
                 </div>
                 <button className="w-full py-2 bg-slate-50 text-slate-600 rounded-lg font-medium hover:bg-slate-100 transition-colors">
@@ -128,6 +131,19 @@ const SuperAdminView = () => {
                   value={newTenant.slug}
                   onChange={(e) => setNewTenant({...newTenant, slug: e.target.value.toLowerCase().replace(/\s+/g, '-')})}
                 />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Dominio Personalizado (Opcional)</label>
+                <div className="relative">
+                  <Globe className="absolute left-3 top-3.5 text-slate-400" size={18} />
+                  <input 
+                    type="text" 
+                    placeholder="ej: menu.mihamburguesa.com"
+                    className="w-full p-3 pl-10 rounded-lg border border-slate-200 focus:ring-2 focus:ring-orange-500 outline-none"
+                    value={newTenant.customDomain}
+                    onChange={(e) => setNewTenant({...newTenant, customDomain: e.target.value.toLowerCase()})}
+                  />
+                </div>
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">Color Principal</label>
