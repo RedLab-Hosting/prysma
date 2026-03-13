@@ -53,3 +53,15 @@ Este documento registra las decisiones técnicas, cambios de base de datos y con
 ### Refinamiento de Branding
 - **Problema**: Logo duplicado (icono + texto) en el sidebar.
 - **Solución**: Se reemplazó el contenedor del icono y el texto manual por la imagen `prysma_full_logo_white.svg` que contiene tanto el icono como el nombre, logrando un diseño más limpio.
+
+### UI Mobile-First y Responsividad
+- **Cambio**: Refactorización completa de `SuperAdminView.jsx` para adoptar un diseño mobile-first.
+- **Detalle**: Implementación de sidebar colapsable para móviles, cuadrícula de tarjetas adaptable y optimización de espaciados y tamaños de fuente para pantallas pequeñas.
+
+### Personalización Avanzada de Tenants
+- **Cambio**: Expansión del modelo de datos y UI de registro de empresas.
+- **Detalle**: Se añadieron selectores de color hexadecimal para **Primary/Secondary Colors** y toggles modulares para **Features** (Delivery, Inventario, Pagos, etc.), permitiendo que cada tienda sea configurada según sus necesidades desde el kernel.
+
+### Idempotencia en Setup SQL
+- **Problema**: ERROR: relation "tenants" already exists al re-ejecutar el script de base de datos.
+- **Solución**: Se actualizó `SUPABASE_SETUP.sql` para usar `CREATE TABLE IF NOT EXISTS` y un bloque anónimo para limpiar (`DROP POLICY IF EXISTS`) todas las políticas de RLS antes de recrearlas. Esto garantiza que el entorno de desarrollo y producción pueda ser actualizado sin conflictos de colisión de nombres.

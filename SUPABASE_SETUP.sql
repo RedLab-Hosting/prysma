@@ -1,8 +1,9 @@
 -- SUPABASE_SETUP.sql
 -- Base de datos para Prysma Fast Food V2
+-- Actualizado: Idempotente (se puede ejecutar varias veces)
 
 -- 1. Tenants Table (Empresas)
-CREATE TABLE tenants (
+CREATE TABLE IF NOT EXISTS tenants (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name TEXT NOT NULL,
     slug TEXT UNIQUE NOT NULL,
@@ -30,7 +31,7 @@ CREATE TABLE tenants (
 ALTER TABLE tenants ENABLE ROW LEVEL SECURITY;
 
 -- 2. Profiles Table (Usuarios con Roles)
-CREATE TABLE profiles (
+CREATE TABLE IF NOT EXISTS profiles (
     id UUID PRIMARY KEY REFERENCES auth.users ON DELETE CASCADE,
     tenant_id UUID REFERENCES tenants(id), -- Null for superadmins
     role TEXT CHECK (role IN ('superadmin', 'admin', 'delivery', 'client')),
@@ -41,7 +42,7 @@ CREATE TABLE profiles (
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
 
 -- 3. Categories Table
-CREATE TABLE categories (
+CREATE TABLE IF NOT EXISTS categories (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     tenant_id UUID REFERENCES tenants(id) ON DELETE CASCADE,
     name TEXT NOT NULL,
@@ -53,7 +54,7 @@ CREATE TABLE categories (
 ALTER TABLE categories ENABLE ROW LEVEL SECURITY;
 
 -- 4. Products Table
-CREATE TABLE products (
+CREATE TABLE IF NOT EXISTS products (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     tenant_id UUID REFERENCES tenants(id) ON DELETE CASCADE,
     category_id UUID REFERENCES categories(id) ON DELETE SET NULL,
@@ -69,7 +70,7 @@ CREATE TABLE products (
 ALTER TABLE products ENABLE ROW LEVEL SECURITY;
 
 -- 5. Orders Table
-CREATE TABLE orders (
+CREATE TABLE IF NOT EXISTS orders (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     tenant_id UUID REFERENCES tenants(id) ON DELETE CASCADE,
     number BIGSERIAL,
@@ -85,7 +86,7 @@ CREATE TABLE orders (
 ALTER TABLE orders ENABLE ROW LEVEL SECURITY;
 
 -- 6. Exchange Rates Table
-CREATE TABLE exchange_rates (
+CREATE TABLE IF NOT EXISTS exchange_rates (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     tenant_id UUID REFERENCES tenants(id) ON DELETE CASCADE,
     rate DECIMAL(10,4) NOT NULL,
@@ -93,19 +94,9 @@ CREATE TABLE exchange_rates (
     last_updated TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Enable RLS for exchange rates
 ALTER TABLE exchange_rates ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Public can see exchange rate for tenant" ON exchange_rates
-    FOR SELECT USING (true);
-
-CREATE POLICY "Admins can manage exchange rates" ON exchange_rates
-    FOR ALL USING (
-        tenant_id = (SELECT tenant_id FROM profiles WHERE profiles.id = auth.uid())
-        AND (SELECT role FROM profiles WHERE profiles.id = auth.uid()) IN ('admin', 'superadmin')
-    );
-
--- Help function to check if user is superadmin
+-- Help functions (Using CREATE OR REPLACE)
 CREATE OR REPLACE FUNCTION is_superadmin()
 RETURNS BOOLEAN AS $$
   SELECT EXISTS (
@@ -114,26 +105,62 @@ RETURNS BOOLEAN AS $$
   );
 $$ LANGUAGE sql SECURITY DEFINER SET search_path = public;
 
--- Help function to get current user's tenant_id
 CREATE OR REPLACE FUNCTION get_my_tenant_id()
 RETURNS UUID AS $$
   SELECT tenant_id FROM profiles WHERE id = auth.uid();
 $$ LANGUAGE sql SECURITY DEFINER SET search_path = public;
 
--- Help function to get current user's role
 CREATE OR REPLACE FUNCTION get_my_role()
 RETURNS TEXT AS $$
   SELECT role FROM profiles WHERE id = auth.uid();
 $$ LANGUAGE sql SECURITY DEFINER SET search_path = public;
+
+-- Clean up existing policies to avoid "already exists" errors
+-- (Wait for Supabase to support "CREATE OR REPLACE POLICY")
+DO $$ 
+BEGIN
+    -- Exchange Rates
+    DROP POLICY IF EXISTS "Public can see exchange rate for tenant" ON exchange_rates;
+    DROP POLICY IF EXISTS "Admins can manage exchange rates" ON exchange_rates;
+    
+    -- Tenants
+    DROP POLICY IF EXISTS "SuperAdmins can do everything on tenants" ON tenants;
+    DROP POLICY IF EXISTS "Users can see their own tenant" ON tenants;
+    DROP POLICY IF EXISTS "Public can see tenant by slug for client view" ON tenants;
+    
+    -- Profiles
+    DROP POLICY IF EXISTS "Users can see their own profile" ON profiles;
+    DROP POLICY IF EXISTS "Admins can see profiles of their tenant" ON profiles;
+    
+    -- Categories
+    DROP POLICY IF EXISTS "Public can see categories for tenant" ON categories;
+    DROP POLICY IF EXISTS "Admins can manage categories" ON categories;
+    
+    -- Products
+    DROP POLICY IF EXISTS "Public can see products for tenant" ON products;
+    DROP POLICY IF EXISTS "Admins can manage products" ON products;
+    
+    -- Orders
+    DROP POLICY IF EXISTS "Clients can see their own orders" ON orders;
+    DROP POLICY IF EXISTS "Tenant isolation for orders" ON orders;
+END $$;
+
+-- Policies for Exchange Rates
+CREATE POLICY "Public can see exchange rate for tenant" ON exchange_rates
+    FOR SELECT USING (true);
+
+CREATE POLICY "Admins can manage exchange rates" ON exchange_rates
+    FOR ALL USING (
+        tenant_id = get_my_tenant_id()
+        AND get_my_role() IN ('admin', 'superadmin')
+    );
 
 -- Policies for Tenants
 CREATE POLICY "SuperAdmins can do everything on tenants" ON tenants
     FOR ALL USING (is_superadmin());
 
 CREATE POLICY "Users can see their own tenant" ON tenants
-    FOR SELECT USING (
-        id = get_my_tenant_id()
-    );
+    FOR SELECT USING (id = get_my_tenant_id());
 
 CREATE POLICY "Public can see tenant by slug for client view" ON tenants
     FOR SELECT USING (true);
@@ -154,8 +181,8 @@ CREATE POLICY "Public can see categories for tenant" ON categories
 
 CREATE POLICY "Admins can manage categories" ON categories
     FOR ALL USING (
-        tenant_id = (SELECT tenant_id FROM profiles WHERE profiles.id = auth.uid())
-        AND (SELECT role FROM profiles WHERE profiles.id = auth.uid()) IN ('admin', 'superadmin')
+        tenant_id = get_my_tenant_id()
+        AND get_my_role() IN ('admin', 'superadmin')
     );
 
 -- Policies for Products
@@ -164,8 +191,8 @@ CREATE POLICY "Public can see products for tenant" ON products
 
 CREATE POLICY "Admins can manage products" ON products
     FOR ALL USING (
-        tenant_id = (SELECT tenant_id FROM profiles WHERE profiles.id = auth.uid())
-        AND (SELECT role FROM profiles WHERE profiles.id = auth.uid()) IN ('admin', 'superadmin')
+        tenant_id = get_my_tenant_id()
+        AND get_my_role() IN ('admin', 'superadmin')
     );
 
 -- Policies for Orders
@@ -176,6 +203,6 @@ CREATE POLICY "Clients can see their own orders" ON orders
 
 CREATE POLICY "Tenant isolation for orders" ON orders
     FOR ALL USING (
-        tenant_id = (SELECT tenant_id FROM profiles WHERE profiles.id = auth.uid())
+        tenant_id = get_my_tenant_id()
         OR is_superadmin()
     );
