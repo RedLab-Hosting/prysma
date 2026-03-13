@@ -27,6 +27,8 @@ CREATE TABLE tenants (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+ALTER TABLE tenants ENABLE ROW LEVEL SECURITY;
+
 -- 2. Profiles Table (Usuarios con Roles)
 CREATE TABLE profiles (
     id UUID PRIMARY KEY REFERENCES auth.users ON DELETE CASCADE,
@@ -35,6 +37,8 @@ CREATE TABLE profiles (
     name TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+
+ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
 
 -- 3. Categories Table
 CREATE TABLE categories (
@@ -45,6 +49,8 @@ CREATE TABLE categories (
     sort_order INT DEFAULT 0,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+
+ALTER TABLE categories ENABLE ROW LEVEL SECURITY;
 
 -- 4. Products Table
 CREATE TABLE products (
@@ -60,6 +66,8 @@ CREATE TABLE products (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+ALTER TABLE products ENABLE ROW LEVEL SECURITY;
+
 -- 5. Orders Table
 CREATE TABLE orders (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -73,6 +81,8 @@ CREATE TABLE orders (
     delivery_driver_id UUID REFERENCES auth.users(id),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+
+ALTER TABLE orders ENABLE ROW LEVEL SECURITY;
 
 -- 6. Exchange Rates Table
 CREATE TABLE exchange_rates (
