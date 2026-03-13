@@ -50,7 +50,6 @@ Este documento registra las decisiones técnicas, cambios de base de datos y con
   - Se añadió `SET search_path = public` a la función `is_superadmin`.
   - Se crearon funciones `SECURITY DEFINER` (`get_my_tenant_id`, `get_my_role`) para evitar recursión en las políticas de RLS.
 
-### Fallo en el Procesamiento de Tailwind v4
-- **Problema**: Los estilos de Tailwind no se aplicaban a pesar de tener las clases en el HTML.
-- **Causa**: Falta del plugin `@tailwindcss/vite` y orden incorrecto de plugins en `vite.config.js`.
-- **Solución**: Se instaló el plugin oficial de Vite para Tailwind v4, se configuró en `vite.config.js` antes que el plugin de React, y se simplificó `index.css` con el nuevo estándar de `@import`.
+### Refinamiento de Branding
+- **Problema**: Logo duplicado (icono + texto) en el sidebar.
+- **Solución**: Se reemplazó el contenedor del icono y el texto manual por la imagen `prysma_full_logo_white.svg` que contiene tanto el icono como el nombre, logrando un diseño más limpio.

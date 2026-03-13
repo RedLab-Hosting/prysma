@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg width="100%" height="100%" viewBox="0 0 4023 820" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;">
+    <g transform="matrix(1,0,0,1,-194.155281,-6701.918176)">
+        <g transform="matrix(1,0,0,0.230909,0,5067.315682)">
+            <g transform="matrix(6.001655,0,0,25.991454,-7856.818278,-5421.054451)">
+                <g transform="matrix(1,0,0,1,-0,71.715229)">
+                    <g transform="matrix(1,0,0,1,1071.157012,86.272965)">
+                        <g transform="matrix(208.333333,0,0,208.333333,826.942464,457.727035)">
+                        </g>
+                        <text x="254.229px" y="457.727px" style="font-family:'Consolas', monospace;font-size:208.333px;fill:white;">PRYSM</text>
+                    </g>
+                </g>
+                <g transform="matrix(2.00535,0,0,1.731579,1389.888102,-71.719722)">
+                    <path d="M310.031,396.999L253.927,396.999L275.942,320.216L288.32,320.216L310.031,396.999ZM292.987,370.915L281.979,329.851L270.565,370.915L292.987,370.915Z" style="fill:white;fill-rule:nonzero;"/>
+                </g>
+            </g>
+        </g>
+    </g>
+</svg>

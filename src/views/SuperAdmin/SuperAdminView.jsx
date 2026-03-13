@@ -67,13 +67,8 @@ const SuperAdminView = () => {
       <div className="flex relative z-10">
         {/* Sidebar */}
         <aside className="w-72 bg-slate-900/50 backdrop-blur-xl border-r border-white/5 p-8 hidden md:flex flex-col h-screen sticky top-0">
-          <div className="flex items-center gap-3 mb-12">
-            <div className="w-10 h-10 bg-gradient-to-br from-orange-500 via-purple-500 to-blue-500 p-[2px] rounded-xl shadow-lg shadow-orange-500/20">
-              <div className="w-full h-full bg-[#0f172a] rounded-[10px] flex items-center justify-center">
-                <img src="/assets/logo_prysma_white.svg" alt="Prysma" className="w-6 h-6" />
-              </div>
-            </div>
-            <h2 className="text-2xl font-black tracking-tighter text-white">PRYSMA</h2>
+          <div className="mb-12 px-2">
+            <img src="/assets/prysma_full_logo_white.svg" alt="Prysma" className="h-10 w-auto" />
           </div>
 
           <nav className="space-y-2 flex-1">
