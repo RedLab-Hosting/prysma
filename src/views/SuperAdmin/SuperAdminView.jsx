@@ -1,5 +1,6 @@
 import { tenantService } from '../../api/tenantService';
-import { Plus, Building2, LayoutDashboard, Settings, Loader2, Globe } from 'lucide-react';
+import { githubService } from '../../api/githubService';
+import { Plus, Building2, LayoutDashboard, Settings, Loader2, Globe, Github } from 'lucide-react';
 
 const SuperAdminView = () => {
   const [tenants, setTenants] = useState([]);
@@ -11,6 +12,8 @@ const SuperAdminView = () => {
     primaryColor: '#ea580c',
     customDomain: '' 
   });
+
+  const [creatingRepo, setCreatingRepo] = useState(false);
 
   useEffect(() => {
     fetchTenants();
@@ -25,14 +28,32 @@ const SuperAdminView = () => {
 
   const handleCreateTenant = async (e) => {
     e.preventDefault();
-    const { data, error } = await tenantService.createTenant(newTenant);
+    setCreatingRepo(true);
     
-    if (!error) {
-      setShowModal(false);
-      fetchTenants();
-      setNewTenant({ name: '', slug: '', primaryColor: '#ea580c', customDomain: '' });
-    } else {
-      alert(error.message);
+    try {
+        // 1. Create Repository on GitHub
+        const repoName = newTenant.slug;
+        const repoData = await githubService.createCompanyRepo(repoName, `Prysma store for ${newTenant.name}`);
+        
+        // 2. Create entry in Supabase
+        const updatedTenant = { 
+            ...newTenant, 
+            customDomain: `https://redlab-hosting.github.io/${repoName}/` // Default to GH Pages link
+        };
+        
+        const { data, error } = await tenantService.createTenant(updatedTenant);
+        
+        if (!error) {
+          setShowModal(false);
+          fetchTenants();
+          setNewTenant({ name: '', slug: '', primaryColor: '#ea580c', customDomain: '' });
+        } else {
+          alert('Error en Supabase: ' + error.message);
+        }
+    } catch (err) {
+        alert('Error creando Repo en GitHub: ' + err.message);
+    } finally {
+        setCreatingRepo(false);
     }
   };
 
@@ -164,9 +185,17 @@ const SuperAdminView = () => {
                 </button>
                 <button 
                   type="submit"
-                  className="flex-1 py-3 bg-orange-600 text-white font-semibold rounded-lg hover:bg-orange-700"
+                  disabled={creatingRepo}
+                  className="flex-1 py-3 bg-orange-600 text-white font-semibold rounded-lg hover:bg-orange-700 flex items-center justify-center gap-2 disabled:opacity-50"
                 >
-                  Confirmar
+                  {creatingRepo ? (
+                      <>
+                        <Loader2 className="animate-spin" size={20} />
+                        Creando Repo...
+                      </>
+                  ) : (
+                      'Confirmar'
+                  )}
                 </button>
               </div>
             </form>

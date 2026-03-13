@@ -14,12 +14,19 @@ export const TenantProvider = ({ children }) => {
       const hostname = window.location.hostname;
       const pathSegments = window.location.pathname.split('/');
       
-      // 1. Try to detect by custom domain first
-      // 2. If no custom domain (or localhost), check if it's a subdomain or use the slug from path
       try {
         let query = supabase.from('tenants').select('*');
         
-        if (hostname !== 'localhost' && !hostname.includes('prysma.app')) { // Assuming prysma.app is the main domain
+        // Detection Logic:
+        // 1. Custom Domain (hostname)
+        // 2. GitHub Pages (hostname includes github.io, use first path segment as slug)
+        // 3. Local/Main Domain (use path segment as slug)
+        
+        if (hostname.includes('github.io')) {
+            // In GitHub Pages, the repo name is the first part of the path: user.github.io/repo-name/
+            const repoSlug = pathSegments[1];
+            query = query.eq('slug', repoSlug);
+        } else if (hostname !== 'localhost' && !hostname.includes('prysma.app')) {
             query = query.eq('custom_domain', hostname);
         } else {
             const slug = pathSegments[1] && pathSegments[1] !== 'admin' ? pathSegments[1] : 'default';
