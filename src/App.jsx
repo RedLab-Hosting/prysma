@@ -8,8 +8,14 @@ import { CartProvider } from './context/CartContext';
 import AdminDashboardView from './views/Admin/AdminDashboardView';
 
 function App() {
+  // Determine basename for GitHub Pages subfolders
+  const hostname = window.location.hostname;
+  const isGitHubPages = hostname.includes('github.io');
+  const pathSegments = window.location.pathname.split('/');
+  const basename = isGitHubPages && pathSegments[1] ? `/${pathSegments[1]}` : '';
+
   return (
-    <Router>
+    <Router basename={basename}>
       <Routes>
         {/* Super Admin Route */}
         <Route path="/superadmin" element={<SuperAdminView />} />
