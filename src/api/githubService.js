@@ -8,12 +8,15 @@ export const githubService = {
   owner: 'RedLab-Hosting', // Based on your previous push
 
   /**
-   * Creates a new repository by cloning a template or creating a new one.
-   * Since GitHub "Template" API is specific, we'll use the 'create repository' API.
+   * Creates a new repository based on the Prysma Kernel template.
+   * Note: The source repository (prysma) MUST be marked as a "Template repository" on GitHub.
    */
   async createCompanyRepo(name, description) {
     try {
-      const response = await fetch(`https://api.github.com/orgs/${this.owner}/repos`, {
+      // Template repository is 'prysma'
+      const templateRepo = 'prysma';
+      
+      const response = await fetch(`https://api.github.com/repos/${this.owner}/${templateRepo}/generate`, {
         method: 'POST',
         headers: {
           'Authorization': `token ${this.token}`,
@@ -21,28 +24,62 @@ export const githubService = {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
+          owner: this.owner,
           name: name,
           description: description || `Repository for ${name} - Prysma Core Branch`,
-          private: false,
-          has_issues: true,
-          has_projects: false,
-          has_wiki: false
+          include_all_branches: false,
+          private: false
         })
       });
 
       if (!response.ok) {
           const errorData = await response.json();
-          // If not in an org, try creating in user account
-          if (response.status === 404) {
+          // Fallback if not an org or template not found
+          if (response.status === 404 || response.status === 403) {
+             console.warn('Template generation failed, falling back to empty repo creation...', errorData);
              return this.createInUserAccount(name, description);
           }
-          throw new Error(errorData.message || 'Failed to create repository');
+          throw new Error(errorData.message || 'Failed to generate repository from template');
       }
 
       return await response.json();
     } catch (error) {
       console.error('GitHub API Error:', error);
       throw error;
+    }
+  },
+
+  /**
+   * Enables GitHub Pages for a repository.
+   * Note: It configures 'main' branch and '/' path.
+   */
+  async enablePages(repoName) {
+    try {
+      const response = await fetch(`https://api.github.com/repos/${this.owner}/${repoName}/pages`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `token ${this.token}`,
+          'Accept': 'application/vnd.github.v3+json',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          source: {
+            branch: 'main',
+            path: '/'
+          }
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.warn('Could not enable GitHub Pages automatically:', errorData.message);
+        return { success: false, error: errorData.message };
+      }
+
+      return { success: true, data: await response.json() };
+    } catch (error) {
+      console.error('Error enabling GH Pages:', error);
+      return { success: false, error: error.message };
     }
   },
 

@@ -25,10 +25,36 @@ CREATE TABLE IF NOT EXISTS tenants (
         "delivery_free_threshold": 0
     }'::jsonb,
     custom_domain TEXT UNIQUE,
+    is_active BOOLEAN DEFAULT true,
+    -- Branding & Config
+    branding JSONB DEFAULT '{
+        "fontFamily": "Inter",
+        "logo_url": "",
+        "favicon_url": ""
+    }'::jsonb,
+    contact_info JSONB DEFAULT '{
+        "whatsapp": "",
+        "instagram": "",
+        "facebook": "",
+        "address": "",
+        "opening_hours": {}
+    }'::jsonb,
+    integrations JSONB DEFAULT '{
+        "google_analytics_id": "",
+        "fb_pixel_id": "",
+        "whatsapp_business_id": "",
+        "payment_gateways": {}
+    }'::jsonb,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
 ALTER TABLE tenants ENABLE ROW LEVEL SECURITY;
+
+-- Ensure columns exist if table was already created
+ALTER TABLE tenants ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT true;
+ALTER TABLE tenants ADD COLUMN IF NOT EXISTS branding JSONB DEFAULT '{"fontFamily": "Inter", "logo_url": "", "favicon_url": ""}'::jsonb;
+ALTER TABLE tenants ADD COLUMN IF NOT EXISTS contact_info JSONB DEFAULT '{"whatsapp": "", "instagram": "", "facebook": "", "address": "", "opening_hours": {}}'::jsonb;
+ALTER TABLE tenants ADD COLUMN IF NOT EXISTS integrations JSONB DEFAULT '{"google_analytics_id": "", "fb_pixel_id": "", "whatsapp_business_id": "", "payment_gateways": {}}'::jsonb;
 
 -- 2. Profiles Table (Usuarios con Roles)
 CREATE TABLE IF NOT EXISTS profiles (
@@ -127,10 +153,12 @@ BEGIN
     DROP POLICY IF EXISTS "SuperAdmins can do everything on tenants" ON tenants;
     DROP POLICY IF EXISTS "Users can see their own tenant" ON tenants;
     DROP POLICY IF EXISTS "Public can see tenant by slug for client view" ON tenants;
+    DROP POLICY IF EXISTS "Allow anon to manage tenants in debug" ON tenants;
     
     -- Profiles
     DROP POLICY IF EXISTS "Users can see their own profile" ON profiles;
     DROP POLICY IF EXISTS "Admins can see profiles of their tenant" ON profiles;
+    DROP POLICY IF EXISTS "Allow anon to manage profiles in debug" ON profiles;
     
     -- Categories
     DROP POLICY IF EXISTS "Public can see categories for tenant" ON categories;
@@ -165,6 +193,10 @@ CREATE POLICY "Users can see their own tenant" ON tenants
 CREATE POLICY "Public can see tenant by slug for client view" ON tenants
     FOR SELECT USING (true);
 
+-- TEMPORARY: Allow anon to manage tenants for local development/debugging
+CREATE POLICY "Allow anon to manage tenants in debug" ON tenants
+    FOR ALL TO anon USING (true) WITH CHECK (true);
+
 -- Policies for Profiles
 CREATE POLICY "Users can see their own profile" ON profiles
     FOR SELECT USING (id = auth.uid());
@@ -174,6 +206,10 @@ CREATE POLICY "Admins can see profiles of their tenant" ON profiles
         tenant_id = get_my_tenant_id()
         AND get_my_role() IN ('admin', 'superadmin')
     );
+
+-- TEMPORARY: Allow anon to manage profiles for local development/debugging
+CREATE POLICY "Allow anon to manage profiles in debug" ON profiles
+    FOR ALL TO anon USING (true) WITH CHECK (true);
 
 -- Policies for Categories
 CREATE POLICY "Public can see categories for tenant" ON categories

@@ -65,3 +65,19 @@ Este documento registra las decisiones técnicas, cambios de base de datos y con
 ### Idempotencia en Setup SQL
 - **Problema**: ERROR: relation "tenants" already exists al re-ejecutar el script de base de datos.
 - **Solución**: Se actualizó `SUPABASE_SETUP.sql` para usar `CREATE TABLE IF NOT EXISTS` y un bloque anónimo para limpiar (`DROP POLICY IF EXISTS`) todas las políticas de RLS antes de recrearlas. Esto garantiza que el entorno de desarrollo y producción pueda ser actualizado sin conflictos de colisión de nombres.
+
+## 6. Gestión y Despliegue Automatizado
+- **Control de Estado del Sitio**: Se añadió la columna `is_active` a `tenants` y una interfaz de "Power Switch" en el Super Admin para activar/desactivar sitios web instantáneamente.
+- **Automatización de GitHub Pages**: 
+  - Actualización de `githubService.js` para usar la API de **Generación de Repositorios desde Plantilla**.
+  - Implementación de activación automática de **GitHub Pages** vía API (`POST /pages`) tras la creación del repositorio. Esto elimina la necesidad de configurar el hosting manualmente para cada nueva empresa.
+- **Panel de Edición**: Añadida capacidad para modificar colores, temas y features de empresas ya registradas sin necesidad de recrearlas.
+
+## 7. Solución de Pantalla Blanca (GitHub Pages)
+- **Problema**: El sitio desplegado en `github.io` aparecía en blanco.
+- **Causa**:
+  1. Rutas absolutas que buscaban archivos en la raíz del dominio en lugar de la subcarpeta del proyecto.
+  2. Intento de cargar archivos `.jsx` directamente (el navegador no entiende React sin procesar).
+- **Solución**:
+  - Configuración de `base: './'` en `vite.config.js` para usar rutas relativas.
+  - Creación de `.github/workflows/deploy.yml` para automatizar la construcción (`build`) y el despliegue de la carpeta `dist`.
