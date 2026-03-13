@@ -75,7 +75,8 @@ Este documento registra las decisiones técnicas, cambios de base de datos y con
 
 - **Solución**: 
   - Configuración de `base: './'` en `vite.config.js`.
-  - Creación de `.github/workflows/deploy.yml` para automatizar `build` y `deploy`.
+  - Rutas relativas en `index.html` (`./src/main.jsx`).
+  - **Detección de Basename Dinámico**: Implementación en `App.jsx` de una lógica que detecta si el sitio está en `*.github.io` para ajustar el `basename` del router automáticamente.
 
 ## 8. Automatización Total de Despliegue (Zero-Config)
 - **Problema**: Las nuevas empresas requerían configurar Secretos y GitHub Pages manualmente.
