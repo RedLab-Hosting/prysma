@@ -30,12 +30,23 @@ export const tenantService = {
               modifiers: true,
               inventory: false
             },
-            settings: {
-              whatsapp_number: "",
-              currency_symbol: "$",
-              secondary_currency_symbol: "Bs.",
-              delivery_base_cost: 0,
-              delivery_free_threshold: 0
+            branding: {
+              fontFamily: 'Inter',
+              logo_url: '',
+              favicon_url: ''
+            },
+            contact_info: {
+              whatsapp: '',
+              instagram: '',
+              facebook: '',
+              address: '',
+              opening_hours: {}
+            },
+            integrations: {
+              google_analytics_id: '',
+              fb_pixel_id: '',
+              whatsapp_business_id: '',
+              payment_gateways: {}
             }
           }
         ])
@@ -60,5 +71,31 @@ export const tenantService = {
       .order('created_at', { ascending: false });
     
     return { data, error };
+  },
+
+  /**
+   * Updates an existing tenant
+   */
+  async updateTenant(id, tenantData) {
+    const { data, error } = await supabase
+      .from('tenants')
+      .update(tenantData)
+      .eq('id', id)
+      .select()
+      .single();
+    
+    return { data, error };
+  },
+
+  /**
+   * Deletes a tenant
+   */
+  async deleteTenant(id) {
+    const { error } = await supabase
+      .from('tenants')
+      .delete()
+      .eq('id', id);
+    
+    return { error };
   }
 };

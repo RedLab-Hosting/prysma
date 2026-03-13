@@ -1,10 +1,8 @@
-import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { X, Plus, Minus, ShoppingCart } from 'lucide-react';
-import { useCart } from '../../context/CartContext';
+import { useTenant } from '../../context/TenantContext';
 
 const ProductModal = ({ product, isOpen, onClose, exchangeRate = 1 }) => {
   const { addToCart } = useCart();
+  const { features } = useTenant();
   const [selectedModifiers, setSelectedModifiers] = useState({});
   const [quantity, setQuantity] = useState(1);
 
@@ -80,7 +78,7 @@ const ProductModal = ({ product, isOpen, onClose, exchangeRate = 1 }) => {
               </p>
 
               {/* Modifiers (Mock groups for now) */}
-              {product.modifiers && product.modifiers.map((group) => (
+              {features?.modifiers && product.modifiers && product.modifiers.map((group) => (
                 <div key={group.name} className="mb-6">
                   <h3 className="font-bold text-zinc-900 dark:text-zinc-100 mb-3 flex items-center justify-between">
                     {group.name}

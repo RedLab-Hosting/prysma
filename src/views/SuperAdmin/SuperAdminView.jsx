@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { tenantService } from '../../api/tenantService';
 import { githubService } from '../../api/githubService';
-import { Plus, Building2, LayoutDashboard, Settings, Loader2, Globe, Github, Menu, X, CheckCircle2 } from 'lucide-react';
+import { Plus, Building2, LayoutDashboard, Settings, Loader2, Globe, Github, Menu, X, CheckCircle2, Power, Edit3, Trash2, RefreshCw } from 'lucide-react';
 
 const SuperAdminView = () => {
   const [tenants, setTenants] = useState([]);
@@ -26,6 +26,9 @@ const SuperAdminView = () => {
   });
 
   const [creatingRepo, setCreatingRepo] = useState(false);
+  const [editingTenant, setEditingTenant] = useState(null); // The tenant being edited
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [activeTab, setActiveTab] = useState('general'); // general, branding, business, integrations
 
   useEffect(() => {
     fetchTenants();
@@ -43,14 +46,25 @@ const SuperAdminView = () => {
     setCreatingRepo(true);
     
     try {
-        // 1. Create Repository on GitHub
+        // 1. Create Repository on GitHub (Template Generation)
         const repoName = newTenant.slug;
-        const repoData = await githubService.createCompanyRepo(repoName, `Prysma store for ${newTenant.name}`);
+        await githubService.createCompanyRepo(repoName, `Prysma store for ${newTenant.name}`);
         
-        // 2. Create entry in Supabase
+        // 2. Automate GitHub Secrets Setup
+        // We do this immediately after repo creation
+        await githubService.setupTenantSecrets(repoName);
+
+        // 3. Automate GitHub Pages Deployment (Source: Actions)
+        // Small delay to allow GH to process the repo
+        setTimeout(async () => {
+          await githubService.enablePages(repoName);
+          await githubService.dispatchWorkflow(repoName);
+        }, 3000);
+
+        // 4. Create entry in Supabase
         const updatedTenant = { 
             ...newTenant, 
-            customDomain: `https://redlab-hosting.github.io/${repoName}/` // Default to GH Pages link
+            customDomain: `https://${githubService.owner.toLowerCase()}.github.io/${repoName}/` 
         };
         
         const { data, error } = await tenantService.createTenant(updatedTenant);
@@ -81,6 +95,67 @@ const SuperAdminView = () => {
         alert('Error creando Repo en GitHub: ' + err.message);
     } finally {
         setCreatingRepo(false);
+    }
+  };
+
+  const handleUpdateTenant = async (e) => {
+    e.preventDefault();
+    if (!editingTenant) return;
+
+    try {
+      const { data, error } = await tenantService.updateTenant(editingTenant.id, {
+        name: editingTenant.name,
+        custom_domain: editingTenant.custom_domain,
+        theme: editingTenant.theme,
+        features: editingTenant.features,
+        branding: editingTenant.branding,
+        contact_info: editingTenant.contact_info,
+        integrations: editingTenant.integrations,
+        is_active: editingTenant.is_active
+      });
+
+      if (!error) {
+        setShowEditModal(false);
+        fetchTenants();
+      } else {
+        alert('Error actualizando: ' + error.message);
+      }
+    } catch (err) {
+      alert('Error: ' + err.message);
+    }
+  };
+
+  const toggleTenantStatus = async (tenant) => {
+    const newStatus = !tenant.is_active;
+    const { error } = await tenantService.updateTenant(tenant.id, { is_active: newStatus });
+    if (!error) {
+      fetchTenants();
+    }
+  };
+
+  const handleRepairTenant = async (tenant) => {
+    if (!confirm(`¿Deseas sincronizar los secretos y el despliegue de ${tenant.name}?`)) return;
+    
+    setLoading(true);
+    try {
+      await githubService.setupTenantSecrets(tenant.slug);
+      await githubService.enablePages(tenant.slug);
+      
+      // Manually trigger the first build
+      await githubService.dispatchWorkflow(tenant.slug);
+      
+      alert('Sincronización completada. El despliegue se ha iniciado en GitHub.');
+    } catch (err) {
+      alert('Error en sincronización: ' + err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteTenant = async (id) => {
+    if (confirm('¿Estás seguro de eliminar esta empresa? Esta acción no se puede deshacer.')) {
+      const { error } = await tenantService.deleteTenant(id);
+      if (!error) fetchTenants();
     }
   };
 
@@ -196,9 +271,43 @@ const SuperAdminView = () => {
                       </div>
                       <span className="text-[10px] md:text-xs font-bold text-slate-500">Config</span>
                     </div>
-                    <button className="px-5 py-2.5 bg-white/5 hover:bg-orange-500 text-slate-300 hover:text-white rounded-xl text-xs font-black transition-all border border-white/5 hover:border-orange-500">
-                      Gestionar
-                    </button>
+                    <div className="flex gap-2">
+                       <button 
+                        onClick={() => {
+                          setEditingTenant(t);
+                          setShowEditModal(true);
+                        }}
+                        className="p-2.5 bg-white/5 hover:bg-white/10 text-slate-300 rounded-xl transition-all border border-white/5"
+                        title="Editar"
+                      >
+                        <Edit3 size={16} />
+                      </button>
+                      <button 
+                        onClick={() => toggleTenantStatus(t)}
+                        className={`p-2.5 rounded-xl transition-all border ${
+                          t.is_active 
+                            ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500 hover:bg-emerald-500/20' 
+                            : 'bg-rose-500/10 border-rose-500/20 text-rose-500 hover:bg-rose-500/20'
+                        }`}
+                        title={t.is_active ? 'Desactivar' : 'Activar'}
+                      >
+                        <Power size={16} />
+                      </button>
+                      <button 
+                        onClick={() => handleRepairTenant(t)}
+                        className="p-2.5 bg-white/5 hover:bg-blue-500/20 text-slate-500 hover:text-blue-500 rounded-xl transition-all border border-white/5"
+                        title="Sincronizar Repositorio (Fix)"
+                      >
+                        <RefreshCw size={16} />
+                      </button>
+                      <button 
+                        onClick={() => handleDeleteTenant(t.id)}
+                        className="p-2.5 bg-white/5 hover:bg-rose-500/20 text-slate-500 hover:text-rose-500 rounded-xl transition-all border border-white/5"
+                        title="Eliminar"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -331,6 +440,298 @@ const SuperAdminView = () => {
                     </button>
                   </div>
                 </form>
+              </div>
+            </div>
+          </div>
+        )}
+        {/* Modal Editar Empresa */}
+        {showEditModal && editingTenant && (
+          <div className="fixed inset-0 bg-[#0f172a]/80 backdrop-blur-xl flex items-center justify-center p-4 z-100 animate-in fade-in duration-300 overflow-y-auto">
+            <div className="bg-slate-900 w-full max-w-4xl rounded-[2.5rem] shadow-2xl border border-white/10 relative my-8 overflow-hidden flex flex-col max-h-[90vh]">
+              {/* Header */}
+              <div className="p-6 md:p-10 pb-0 flex justify-between items-start">
+                  <div>
+                    <h2 className="text-2xl md:text-3xl font-black text-white mb-2 line-clamp-1">{editingTenant.name}</h2>
+                    <p className="text-slate-400 text-sm md:text-base font-medium">Configuración avanzada de la franquicia.</p>
+                  </div>
+                  <button onClick={() => setShowEditModal(false)} className="p-2 text-slate-500 hover:text-white bg-white/5 rounded-full transition-colors">
+                    <X size={24} />
+                  </button>
+              </div>
+
+              {/* Tabs Navigation */}
+              <div className="flex px-6 md:px-10 mt-6 border-b border-white/5 overflow-x-auto gap-4 no-scrollbar">
+                {[
+                  { id: 'general', label: 'General', icon: <LayoutDashboard size={16} /> },
+                  { id: 'branding', label: 'Branding', icon: <LayoutDashboard size={16} /> }, // Using generic icon for now
+                  { id: 'business', label: 'Negocio', icon: <Building2 size={16} /> },
+                  { id: 'integrations', label: 'Integraciones', icon: <Globe size={16} /> }
+                ].map((tab) => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`pb-4 px-4 text-sm font-bold transition-all border-b-2 flex items-center gap-2 whitespace-nowrap ${
+                      activeTab === tab.id 
+                        ? 'border-orange-500 text-orange-500' 
+                        : 'border-transparent text-slate-500 hover:text-slate-300'
+                    }`}
+                  >
+                    {tab.icon}
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Modal Content - Scrollable */}
+              <div className="p-6 md:p-10 flex-1 overflow-y-auto">
+                <form id="edit-tenant-form" onSubmit={handleUpdateTenant} className="space-y-8">
+                  {activeTab === 'general' && (
+                    <div className="space-y-8 animate-in fade-in duration-300">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Nombre Comercial</label>
+                          <input 
+                            type="text" required
+                            className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl focus:ring-2 focus:ring-orange-500 outline-none text-white font-bold transition-all"
+                            value={editingTenant.name}
+                            onChange={(e) => setEditingTenant({...editingTenant, name: e.target.value})}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Estado del Sitio</label>
+                          <button
+                            type="button"
+                            onClick={() => setEditingTenant({...editingTenant, is_active: !editingTenant.is_active})}
+                            className={`w-full p-4 rounded-2xl font-bold flex items-center justify-center gap-2 border transition-all ${
+                              editingTenant.is_active 
+                                ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500' 
+                                : 'bg-rose-500/10 border-rose-500/20 text-rose-500'
+                            }`}
+                          >
+                            <Power size={18} />
+                            {editingTenant.is_active ? 'Sitio Activo' : 'Sitio Desactivado'}
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="space-y-4">
+                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Colores del Tema</label>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {/* Primary and Secondary Color Pickers */}
+                          <div className="flex items-center gap-4 bg-white/5 p-4 rounded-2xl border border-white/10">
+                            <input 
+                              type="color" 
+                              className="w-12 h-12 rounded-lg bg-transparent border-none cursor-pointer"
+                              value={editingTenant.theme?.primaryColor || '#ea580c'}
+                              onChange={(e) => setEditingTenant({
+                                ...editingTenant, 
+                                theme: { ...(editingTenant.theme || {}), primaryColor: e.target.value }
+                              })}
+                            />
+                            <div className="flex flex-col">
+                              <span className="text-[10px] font-bold text-slate-500 uppercase">Primario</span>
+                              <span className="text-white font-mono text-sm">{editingTenant.theme?.primaryColor || '#ea580c'}</span>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-4 bg-white/5 p-4 rounded-2xl border border-white/10">
+                            <input 
+                              type="color" 
+                              className="w-12 h-12 rounded-lg bg-transparent border-none cursor-pointer"
+                              value={editingTenant.theme?.secondaryColor || '#6366f1'}
+                              onChange={(e) => setEditingTenant({
+                                ...editingTenant, 
+                                theme: { ...(editingTenant.theme || {}), secondaryColor: e.target.value }
+                              })}
+                            />
+                            <div className="flex flex-col">
+                              <span className="text-[10px] font-bold text-slate-500 uppercase">Secundario</span>
+                              <span className="text-white font-mono text-sm">{editingTenant.theme?.secondaryColor || '#6366f1'}</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="space-y-4">
+                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Funciones del Módulo</label>
+                        <div className="flex flex-wrap gap-2">
+                          {Object.keys(editingTenant.features || {}).map((feat) => (
+                            <button
+                              key={feat}
+                              type="button"
+                              onClick={() => setEditingTenant({
+                                ...editingTenant,
+                                features: { ...(editingTenant.features || {}), [feat]: !editingTenant.features?.[feat] }
+                              })}
+                              className={`px-6 py-3 rounded-full text-xs font-bold border transition-all flex items-center gap-2 ${
+                                editingTenant.features?.[feat]
+                                  ? 'bg-orange-500/10 border-orange-500/30 text-orange-500'
+                                  : 'bg-white/5 border-white/10 text-slate-500'
+                              }`}
+                            >
+                              {editingTenant.features?.[feat] && <CheckCircle2 size={14} />}
+                              {feat.charAt(0).toUpperCase() + feat.slice(1).replace('_', ' ')}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {activeTab === 'branding' && (
+                    <div className="space-y-8 animate-in fade-in duration-300">
+                      <div className="space-y-4">
+                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Tipografía (Google Fonts)</label>
+                        <select 
+                          className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl focus:ring-2 focus:ring-orange-500 outline-none text-white font-bold transition-all"
+                          value={editingTenant.branding?.fontFamily || 'Inter'}
+                          onChange={(e) => setEditingTenant({
+                            ...editingTenant,
+                            branding: { ...(editingTenant.branding || {}), fontFamily: e.target.value }
+                          })}
+                        >
+                          <option value="Inter">Inter (Sleek Sans)</option>
+                          <option value="Roboto">Roboto (Classic Sans)</option>
+                          <option value="Montserrat">Montserrat (Modern Sans)</option>
+                          <option value="Playfair Display">Playfair Display (Premium Serif)</option>
+                          <option value="Outfit">Outfit (Clean Geometric)</option>
+                          <option value="Space Grotesk">Space Grotesk (Tech Quirky)</option>
+                        </select>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">URL del Logo (Light/Dark)</label>
+                          <input 
+                            type="text"
+                            placeholder="https://.../logo.png"
+                            className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl focus:ring-2 focus:ring-orange-500 outline-none text-white font-bold transition-all"
+                            value={editingTenant.branding?.logo_url || ''}
+                            onChange={(e) => setEditingTenant({
+                              ...editingTenant,
+                              branding: { ...(editingTenant.branding || {}), logo_url: e.target.value }
+                            })}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">URL del Favicon</label>
+                          <input 
+                            type="text"
+                            placeholder="https://.../favicon.ico"
+                            className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl focus:ring-2 focus:ring-orange-500 outline-none text-white font-bold transition-all"
+                            value={editingTenant.branding?.favicon_url || ''}
+                            onChange={(e) => setEditingTenant({
+                              ...editingTenant,
+                              branding: { ...(editingTenant.branding || {}), favicon_url: e.target.value }
+                            })}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {activeTab === 'business' && (
+                    <div className="space-y-6 animate-in fade-in duration-300">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">WhatsApp de Pedidos</label>
+                          <input 
+                            type="text" placeholder="+584120000000"
+                            className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl focus:ring-2 focus:ring-orange-500 outline-none text-white font-bold transition-all"
+                            value={editingTenant.contact_info?.whatsapp || ''}
+                            onChange={(e) => setEditingTenant({
+                              ...editingTenant,
+                              contact_info: { ...(editingTenant.contact_info || {}), whatsapp: e.target.value }
+                            })}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Instagram (@usuario)</label>
+                          <input 
+                            type="text" placeholder="@burgerhouse"
+                            className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl focus:ring-2 focus:ring-orange-500 outline-none text-white font-bold transition-all"
+                            value={editingTenant.contact_info?.instagram || ''}
+                            onChange={(e) => setEditingTenant({
+                              ...editingTenant,
+                              contact_info: { ...(editingTenant.contact_info || {}), instagram: e.target.value }
+                            })}
+                          />
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Dirección Física</label>
+                        <textarea 
+                          rows="2"
+                          placeholder="Calle principal, CC Sambil, Nivel 2..."
+                          className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl focus:ring-2 focus:ring-orange-500 outline-none text-white font-bold transition-all resize-none"
+                          value={editingTenant.contact_info?.address || ''}
+                          onChange={(e) => setEditingTenant({
+                            ...editingTenant,
+                            contact_info: { ...(editingTenant.contact_info || {}), address: e.target.value }
+                          })}
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {activeTab === 'integrations' && (
+                    <div className="space-y-6 animate-in fade-in duration-300">
+                      <div className="space-y-4">
+                         <div className="p-4 bg-blue-500/10 border border-blue-500/20 rounded-2xl flex gap-4 items-center">
+                            <div className="w-10 h-10 bg-blue-500 text-white rounded-full flex items-center justify-center shrink-0">
+                               <Globe size={20} />
+                            </div>
+                            <p className="text-xs text-blue-200 leading-relaxed font-medium">
+                               Conecta herramientas de terceros para medir el éxito de la franquicia.
+                            </p>
+                         </div>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Google Analytics (UA/G-)</label>
+                          <input 
+                            type="text" placeholder="G-XXXXXXXXXX"
+                            className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl focus:ring-2 focus:ring-orange-500 outline-none text-white font-bold transition-all"
+                            value={editingTenant.integrations?.google_analytics_id || ''}
+                            onChange={(e) => setEditingTenant({
+                              ...editingTenant,
+                              integrations: { ...(editingTenant.integrations || {}), google_analytics_id: e.target.value }
+                            })}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Facebook Pixel ID</label>
+                          <input 
+                            type="text" placeholder="1234567890"
+                            className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl focus:ring-2 focus:ring-orange-500 outline-none text-white font-bold transition-all"
+                            value={editingTenant.integrations?.fb_pixel_id || ''}
+                            onChange={(e) => setEditingTenant({
+                              ...editingTenant,
+                              integrations: { ...(editingTenant.integrations || {}), fb_pixel_id: e.target.value }
+                            })}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </form>
+              </div>
+
+              {/* Footer */}
+              <div className="p-6 md:p-10 bg-slate-800/50 border-t border-white/5 flex gap-4">
+                  <button 
+                    type="button"
+                    onClick={() => setShowEditModal(false)}
+                    className="flex-1 px-8 py-4 rounded-2xl font-bold text-slate-400 hover:text-white hover:bg-white/5 transition-all"
+                  >
+                    Cerrar
+                  </button>
+                  <button 
+                    form="edit-tenant-form"
+                    type="submit"
+                    className="flex-2 bg-orange-500 hover:bg-orange-600 text-white px-8 py-4 rounded-2xl font-black transition-all shadow-xl shadow-orange-500/20"
+                  >
+                    Guardar Cambios
+                  </button>
               </div>
             </div>
           </div>

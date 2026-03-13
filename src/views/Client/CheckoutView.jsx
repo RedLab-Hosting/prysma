@@ -32,8 +32,8 @@ const LocationPicker = ({ position, setPosition }) => {
 const CheckoutView = () => {
   const navigate = useNavigate();
   const { cart, cartTotalUSD, cartCount, clearCart } = useCart();
-  const { tenant } = useTenant();
-  const [deliveryType, setDeliveryType] = useState('delivery');
+  const { tenant, features } = useTenant();
+  const [deliveryType, setDeliveryType] = useState(features.delivery ? 'delivery' : 'pickup');
   const [formData, setFormData] = useState({ name: '', phone: '', address: '' });
   const [position, setPosition] = useState([10.4806, -66.9036]); // Caracas default
   const [deliveryCost, setDeliveryCost] = useState(2.00); // Mock cost
@@ -92,28 +92,30 @@ const CheckoutView = () => {
       <main className="max-w-3xl mx-auto px-4 py-8">
         <form onSubmit={handleSubmit} className="space-y-8">
           {/* Delivery Type Toggle */}
-          <div className="grid grid-cols-2 gap-3 bg-white dark:bg-zinc-900 p-1.5 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm">
-            <button
-              type="button"
-              onClick={() => setDeliveryType('delivery')}
-              className={`flex items-center justify-center gap-2 py-3 rounded-xl font-bold transition-all ${
-                deliveryType === 'delivery' ? 'bg-zinc-900 text-white shadow-lg' : 'text-zinc-500'
-              }`}
-            >
-              <Truck size={20} />
-              Delivery
-            </button>
-            <button
-              type="button"
-              onClick={() => setDeliveryType('pickup')}
-              className={`flex items-center justify-center gap-2 py-3 rounded-xl font-bold transition-all ${
-                deliveryType === 'pickup' ? 'bg-zinc-900 text-white shadow-lg' : 'text-zinc-500'
-              }`}
-            >
-              <Store size={20} />
-              Retiro
-            </button>
-          </div>
+          {features.delivery && features.pickup && (
+            <div className="grid grid-cols-2 gap-3 bg-white dark:bg-zinc-900 p-1.5 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm">
+              <button
+                type="button"
+                onClick={() => setDeliveryType('delivery')}
+                className={`flex items-center justify-center gap-2 py-3 rounded-xl font-bold transition-all ${
+                  deliveryType === 'delivery' ? 'bg-zinc-900 text-white shadow-lg' : 'text-zinc-500'
+                }`}
+              >
+                <Truck size={20} />
+                Delivery
+              </button>
+              <button
+                type="button"
+                onClick={() => setDeliveryType('pickup')}
+                className={`flex items-center justify-center gap-2 py-3 rounded-xl font-bold transition-all ${
+                  deliveryType === 'pickup' ? 'bg-zinc-900 text-white shadow-lg' : 'text-zinc-500'
+                }`}
+              >
+                <Store size={20} />
+                Retiro
+              </button>
+            </div>
+          )}
 
           {/* Customer Info */}
           <section className="bg-white dark:bg-zinc-900 rounded-3xl p-6 border border-zinc-200 dark:border-zinc-800 shadow-sm space-y-4">
