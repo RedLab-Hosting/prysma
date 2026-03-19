@@ -2,8 +2,14 @@
  * Utility to generate a formatted WhatsApp message for orders.
  */
 export const generateWhatsAppMessage = (orderData, cart, totalUSD, totalBS) => {
-  const { name, phone, deliveryType, address, deliveryCostUSD } = orderData;
+  const { name, phone, deliveryType, address, deliveryCostUSD, paymentMethod } = orderData;
   
+  const paymentText = {
+    'zelle': '🇺🇸 Zelle (Dólares)',
+    'pago_movil': '🇻🇪 Pago Móvil (Bolívares)',
+    'cash': '💵 Efectivo'
+  }[paymentMethod] || 'No especificado';
+
   const itemsText = cart.map(item => {
     const modifiersText = item.selectedModifiers 
       ? Object.entries(item.selectedModifiers).map(([k, v]) => `  - ${k}: ${v}`).join('\n')
@@ -19,6 +25,7 @@ export const generateWhatsAppMessage = (orderData, cart, totalUSD, totalBS) => {
 📞 Teléfono: ${phone}
 🚚 Tipo: ${deliveryType === 'delivery' ? 'Delivery' : 'Retiro en Tienda'}
 📍 Dirección: ${address || 'N/A'}
+💳 Pago: ${paymentText}
 
 *Detalles del Pedido:*
 ${itemsText}

@@ -115,9 +115,11 @@ ALTER TABLE orders ENABLE ROW LEVEL SECURITY;
 CREATE TABLE IF NOT EXISTS exchange_rates (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     tenant_id UUID REFERENCES tenants(id) ON DELETE CASCADE,
-    rate DECIMAL(10,4) NOT NULL,
+    rate DECIMAL(18,8) NOT NULL,
+    currency_code TEXT DEFAULT 'USD',
     mode TEXT CHECK (mode IN ('auto', 'manual')) DEFAULT 'auto',
-    last_updated TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    last_updated TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    UNIQUE(tenant_id, currency_code)
 );
 
 ALTER TABLE exchange_rates ENABLE ROW LEVEL SECURITY;
@@ -181,7 +183,17 @@ CREATE POLICY "Admins can manage exchange rates" ON exchange_rates
     FOR ALL USING (
         tenant_id = get_my_tenant_id()
         AND get_my_role() IN ('admin', 'superadmin')
+    )
+    WITH CHECK (
+        tenant_id = get_my_tenant_id()
+        AND get_my_role() IN ('admin', 'superadmin')
     );
+
+-- 🚨 SECURITY WARNING: DEBUG POLICY
+-- This allows anyone (anonymous users) to modify exchange rates.
+-- REMOVE THIS BEFORE GOING TO PRODUCTION.
+CREATE POLICY "DEBUG_Allow anon to manage exchange rates" ON exchange_rates
+    FOR ALL TO anon USING (true) WITH CHECK (true);
 
 -- Policies for Tenants
 CREATE POLICY "SuperAdmins can do everything on tenants" ON tenants
@@ -193,8 +205,10 @@ CREATE POLICY "Users can see their own tenant" ON tenants
 CREATE POLICY "Public can see tenant by slug for client view" ON tenants
     FOR SELECT USING (true);
 
--- TEMPORARY: Allow anon to manage tenants for local development/debugging
-CREATE POLICY "Allow anon to manage tenants in debug" ON tenants
+-- 🚨 SECURITY WARNING: DEBUG POLICY
+-- This allows anyone (anonymous users) to manage tenants.
+-- REMOVE THIS BEFORE GOING TO PRODUCTION.
+CREATE POLICY "DEBUG_Allow anon to manage tenants in debug" ON tenants
     FOR ALL TO anon USING (true) WITH CHECK (true);
 
 -- Policies for Profiles
@@ -207,8 +221,10 @@ CREATE POLICY "Admins can see profiles of their tenant" ON profiles
         AND get_my_role() IN ('admin', 'superadmin')
     );
 
--- TEMPORARY: Allow anon to manage profiles for local development/debugging
-CREATE POLICY "Allow anon to manage profiles in debug" ON profiles
+-- 🚨 SECURITY WARNING: DEBUG POLICY
+-- This allows anyone (anonymous users) to manage profiles.
+-- REMOVE THIS BEFORE GOING TO PRODUCTION.
+CREATE POLICY "DEBUG_Allow anon to manage profiles in debug" ON profiles
     FOR ALL TO anon USING (true) WITH CHECK (true);
 
 -- Policies for Categories

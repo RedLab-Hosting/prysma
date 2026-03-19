@@ -1,3 +1,7 @@
+import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { X, Minus, Plus, ShoppingCart } from 'lucide-react';
+import { useCart } from '../../context/CartContext';
 import { useTenant } from '../../context/TenantContext';
 
 const ProductModal = ({ product, isOpen, onClose, exchangeRate = 1 }) => {
@@ -44,7 +48,7 @@ const ProductModal = ({ product, isOpen, onClose, exchangeRate = 1 }) => {
             animate={{ y: 0 }}
             exit={{ y: "100%" }}
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
-            className="relative w-full max-w-lg bg-white dark:bg-zinc-900 rounded-t-3xl sm:rounded-3xl overflow-hidden shadow-2xl max-h-[90vh] flex flex-col"
+            className="relative w-full max-w-lg bg-white rounded-t-3xl sm:rounded-3xl overflow-hidden max-h-[90vh] flex flex-col border border-zinc-200"
           >
             {/* Header / Image Area */}
             <div className="relative h-64 sm:h-72">
@@ -64,7 +68,7 @@ const ProductModal = ({ product, isOpen, onClose, exchangeRate = 1 }) => {
             {/* Content Area */}
             <div className="p-6 overflow-y-auto grow h-full">
               <div className="flex justify-between items-start mb-2">
-                <h2 className="text-2xl font-bold text-zinc-900 dark:text-white">{product.name}</h2>
+                <h2 className="text-2xl font-bold text-zinc-900">{product.name}</h2>
                 <div className="text-right">
                   <div className="text-xl font-bold text-primary" style={{ color: 'var(--primary-color, #ea580c)' }}>
                     ${product.price.toFixed(2)}
@@ -73,14 +77,14 @@ const ProductModal = ({ product, isOpen, onClose, exchangeRate = 1 }) => {
                 </div>
               </div>
               
-              <p className="text-zinc-600 dark:text-zinc-400 text-sm mb-6 leading-relaxed">
+              <p className="text-zinc-600 text-sm mb-6 leading-relaxed">
                 {product.description || 'Disfruta de nuestro delicioso producto preparado con los mejores ingredientes.'}
               </p>
 
               {/* Modifiers (Mock groups for now) */}
               {features?.modifiers && product.modifiers && product.modifiers.map((group) => (
                 <div key={group.name} className="mb-6">
-                  <h3 className="font-bold text-zinc-900 dark:text-zinc-100 mb-3 flex items-center justify-between">
+                  <h3 className="font-bold text-zinc-900 mb-3 flex items-center justify-between">
                     {group.name}
                     {group.required && <span className="text-[10px] bg-red-100 text-red-600 px-2 py-0.5 rounded-full uppercase">Obligatorio</span>}
                   </h3>
@@ -92,7 +96,7 @@ const ProductModal = ({ product, isOpen, onClose, exchangeRate = 1 }) => {
                         className={`px-4 py-3 rounded-xl border text-sm font-medium transition-all ${
                           selectedModifiers[group.name] === option
                             ? 'bg-primary/10 border-primary text-primary'
-                            : 'bg-zinc-50 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400'
+                            : 'bg-zinc-50 border-zinc-200 text-zinc-600'
                         }`}
                         style={selectedModifiers[group.name] === option ? { borderColor: 'var(--primary-color)', color: 'var(--primary-color)' } : {}}
                       >
@@ -105,18 +109,18 @@ const ProductModal = ({ product, isOpen, onClose, exchangeRate = 1 }) => {
             </div>
 
             {/* Footer / Add to Cart */}
-            <div className="p-6 bg-zinc-50 dark:bg-zinc-800/50 border-t border-zinc-200 dark:border-zinc-700 flex items-center gap-4">
-              <div className="flex items-center bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-700 p-1">
+            <div className="p-6 bg-zinc-50 border-t border-zinc-200 flex items-center gap-4">
+              <div className="flex items-center bg-white rounded-xl border border-zinc-200 p-1">
                 <button 
                   onClick={() => setQuantity(q => Math.max(1, q - 1))}
-                  className="w-10 h-10 flex items-center justify-center text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors"
+                  className="w-10 h-10 flex items-center justify-center text-zinc-600 hover:bg-zinc-100 rounded-lg transition-colors"
                 >
                   <Minus size={18} />
                 </button>
-                <span className="w-8 text-center font-bold text-zinc-900 dark:text-white">{quantity}</span>
+                <span className="w-8 text-center font-bold text-zinc-900">{quantity}</span>
                 <button 
                   onClick={() => setQuantity(q => q + 1)}
-                  className="w-10 h-10 flex items-center justify-center text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors"
+                  className="w-10 h-10 flex items-center justify-center text-zinc-600 hover:bg-zinc-100 rounded-lg transition-colors"
                 >
                   <Plus size={18} />
                 </button>
@@ -124,7 +128,7 @@ const ProductModal = ({ product, isOpen, onClose, exchangeRate = 1 }) => {
 
               <button
                 onClick={handleAddToCart}
-                className="grow py-3.5 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 rounded-xl font-bold shadow-lg flex items-center justify-center gap-3 hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-all active:scale-[0.98]"
+                className="grow py-3.5 bg-zinc-900 text-white rounded-xl font-bold flex items-center justify-center gap-3 hover:bg-zinc-800 transition-all active:scale-[0.98]"
               >
                 <ShoppingCart size={20} />
                 Añadir al carrito

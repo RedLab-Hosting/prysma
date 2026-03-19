@@ -13,6 +13,9 @@ const SuperAdminView = () => {
     slug: '', 
     primaryColor: '#ea580c',
     secondaryColor: '#6366f1',
+    accentColor1: '#f59e0b',
+    accentColor2: '#10b981',
+    accentColor3: '#3b82f6',
     customDomain: '',
     features: {
       delivery: true,
@@ -26,9 +29,13 @@ const SuperAdminView = () => {
   });
 
   const [creatingRepo, setCreatingRepo] = useState(false);
-  const [editingTenant, setEditingTenant] = useState(null); // The tenant being edited
+  const [editingTenant, setEditingTenant] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [activeTab, setActiveTab] = useState('general'); // general, branding, business, integrations
+  const [activeTab, setActiveTab] = useState('general');
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [tenantToDelete, setTenantToDelete] = useState(null);
+  const [deleteInput, setDeleteInput] = useState('');
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     fetchTenants();
@@ -77,6 +84,9 @@ const SuperAdminView = () => {
             slug: '', 
             primaryColor: '#ea580c', 
             secondaryColor: '#6366f1',
+            accentColor1: '#f59e0b',
+            accentColor2: '#10b981',
+            accentColor3: '#3b82f6',
             customDomain: '',
             features: {
               delivery: true,
@@ -152,18 +162,41 @@ const SuperAdminView = () => {
     }
   };
 
-  const handleDeleteTenant = async (id) => {
-    if (confirm('¿Estás seguro de eliminar esta empresa? Esta acción no se puede deshacer.')) {
-      const { error } = await tenantService.deleteTenant(id);
-      if (!error) fetchTenants();
+  const handleDeleteTenant = async () => {
+    if (!tenantToDelete) return;
+    if (deleteInput !== tenantToDelete.slug) return;
+
+    setIsDeleting(true);
+    try {
+      // 1. Delete associated data (Simplified for example - usually handled via RLS or Cascade)
+      // Actually tenantService.deleteTenant handles this if cascade is on in DB
+      const { error } = await tenantService.deleteTenant(tenantToDelete.id);
+      
+      if (!error) {
+        setShowDeleteConfirm(false);
+        setTenantToDelete(null);
+        setDeleteInput('');
+        fetchTenants();
+      } else {
+        alert('Error eliminando: ' + error.message);
+      }
+    } catch (err) {
+      alert('Error crítico: ' + err.message);
+    } finally {
+      setIsDeleting(false);
     }
   };
 
+  const openDeleteModal = (tenant) => {
+    setTenantToDelete(tenant);
+    setDeleteInput('');
+    setShowDeleteConfirm(true);
+  };
+
   return (
-    <div className="min-h-screen bg-[#0f172a] text-slate-200 selection:bg-orange-500/30 font-sans">
-      {/* Background Glows */}
-      <div className="fixed top-[-10%] left-[-10%] w-[80%] md:w-[40%] h-[40%] bg-orange-600/10 blur-[120px] rounded-full pointer-events-none"></div>
-      <div className="fixed bottom-[-10%] right-[-10%] w-[80%] md:w-[40%] h-[40%] bg-purple-600/10 blur-[120px] rounded-full pointer-events-none"></div>
+    <div className="min-h-screen bg-[#0f172a] text-slate-300 selection:bg-orange-500/30 font-sans">
+      {/* Background - Simple & Flat */}
+      <div className="fixed inset-0 bg-[#0f172a] z-[-1]"></div>
 
       {/* Mobile Header */}
       <div className="md:hidden flex items-center justify-between p-4 bg-slate-900/50 backdrop-blur-xl border-b border-white/5 sticky top-0 z-50">
@@ -173,14 +206,14 @@ const SuperAdminView = () => {
         </button>
       </div>
 
-      <div className="flex relative z-10">
-        {/* Sidebar - Desktop & Mobile Overlay */}
+      <div className="flex relative">
+        {/* Sidebar - Flat & Professional */}
         <aside className={`
           ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
-          fixed md:sticky top-0 left-0 z-40 w-72 h-screen bg-slate-900 md:bg-slate-900/50 backdrop-blur-xl border-r border-white/5 p-8 flex flex-col transition-transform duration-300 ease-in-out
+          fixed md:sticky top-0 left-0 z-40 w-64 h-screen bg-slate-900 border-r border-white/5 p-6 flex flex-col transition-transform duration-200 ease-in-out
         `}>
-          <div className="mb-12 px-2 hidden md:block">
-            <img src="/assets/prysma_full_logo_white.svg" alt="Prysma" className="h-10 w-auto" />
+          <div className="mb-8 px-2 hidden md:block">
+            <img src="/assets/prysma_full_logo_white.svg" alt="Prysma" className="h-7 w-auto object-contain" />
           </div>
 
           <nav className="space-y-2 flex-1">
@@ -209,18 +242,18 @@ const SuperAdminView = () => {
           />
         )}
 
-        {/* Main Content */}
-        <main className="flex-1 p-4 md:p-12 overflow-x-hidden">
-          <header className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 mb-12">
+        {/* Main Content - Improved Scale */}
+        <main className="flex-1 p-6 md:p-10 overflow-x-hidden">
+          <header className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 mb-10">
             <div>
-              <h1 className="text-3xl md:text-4xl font-black text-white tracking-tight mb-2">Panel de Control</h1>
-              <p className="text-slate-400 font-medium text-sm md:text-base">Gestiona tu ecosistema de franquicias inteligentes</p>
+              <h1 className="text-2xl md:text-3xl font-black text-white tracking-tight mb-1">Panel de Control</h1>
+              <p className="text-slate-500 font-medium text-sm">Gestiona tu ecosistema de franquicias inteligentes</p>
             </div>
             <button 
               onClick={() => setShowModal(true)}
-              className="w-full lg:w-auto group bg-white text-slate-900 hover:bg-orange-500 hover:text-white px-8 py-4 rounded-2xl font-bold flex items-center justify-center gap-3 transition-all transform hover:scale-105 active:scale-95 shadow-xl shadow-white/5"
+              className="w-full lg:w-auto bg-white text-slate-900 hover:bg-orange-500 hover:text-white px-6 py-3.5 rounded-xl font-bold flex items-center justify-center gap-2 transition-all transform hover:scale-[1.02] active:scale-95 shadow-sm"
             >
-              <Plus size={22} className="group-hover:rotate-90 transition-transform" /> 
+              <Plus size={18} /> 
               Registrar Empresa
             </button>
           </header>
@@ -236,76 +269,74 @@ const SuperAdminView = () => {
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6 md:gap-8">
               {tenants.map((t) => (
-                <div key={t.id} className="group relative bg-slate-900/40 backdrop-blur-md p-6 md:p-8 rounded-3xl md:rounded-4xl border border-white/5 hover:border-orange-500/30 transition-all hover:shadow-2xl hover:shadow-orange-500/10 overflow-hidden">
-                  {/* Card Background Decoration */}
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-linear-to-br from-orange-500/10 to-transparent blur-2xl group-hover:opacity-100 transition-opacity opacity-0"></div>
-
-                  <div className="flex justify-between items-start mb-6 md:mb-8">
-                    <div className="w-12 h-12 md:w-16 md:h-16 bg-white/5 rounded-2xl flex items-center justify-center border border-white/10 group-hover:bg-orange-500/10 group-hover:border-orange-500/20 transition-colors">
-                      <Building2 className="text-slate-400 group-hover:text-orange-500 transition-colors" size={24} md:size={32} />
+                <div key={t.id} className="group relative bg-[#1e293b] p-5 rounded-2xl border border-white/5 hover:border-orange-500/20 transition-all hover:bg-slate-800 shadow-sm">
+                  <div className="flex justify-between items-start mb-4">
+                    <div className="w-10 h-10 bg-white/5 rounded-xl flex items-center justify-center border border-white/5 group-hover:bg-orange-500/10 transition-colors">
+                      <Building2 className="text-slate-500 group-hover:text-orange-500 transition-colors" size={20} />
                     </div>
                     <div className="flex flex-col items-end gap-2">
-                       <span className="text-[10px] font-black px-3 py-1 bg-emerald-500/10 text-emerald-500 rounded-full uppercase tracking-widest border border-emerald-500/20">
-                        Online
+                       <span className={`text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-widest border ${
+                         t.is_active ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' : 'bg-rose-500/10 text-rose-500 border-rose-500/20'
+                       }`}>
+                        {t.is_active ? 'Online' : 'Offline'}
                       </span>
                     </div>
                   </div>
 
-                  <h3 className="text-xl md:text-2xl font-black text-white mb-2 group-hover:text-orange-500 transition-colors line-clamp-1">{t.name}</h3>
-                  <div className="flex flex-col gap-1 mb-6 md:mb-8">
-                    <p className="text-xs md:text-sm text-slate-500 font-medium flex items-center gap-2 truncate">
-                      <Github size={14} /> /{t.slug}
+                  <h3 className="text-lg font-black text-white mb-1 group-hover:text-orange-500 transition-colors line-clamp-1">{t.name}</h3>
+                  <div className="flex flex-col gap-1 mb-6">
+                    <p className="text-[10px] text-slate-500 font-bold flex items-center gap-1.5 truncate">
+                      <Github size={12} /> /{t.slug}
                     </p>
                     {t.custom_domain && (
-                      <a href={t.custom_domain} target="_blank" rel="noreferrer" className="flex items-center gap-2 text-[11px] md:text-xs text-blue-400 hover:text-blue-300 font-bold transition-colors truncate">
-                        <Globe size={14} /> {t.custom_domain.replace('https://', '')}
+                      <a href={t.custom_domain} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 text-[10px] text-blue-500 hover:text-blue-400 font-black transition-colors truncate">
+                        <Globe size={12} /> {t.custom_domain.replace('https://', '')}
                       </a>
                     )}
                   </div>
 
-                  <div className="flex items-center justify-between pt-6 border-t border-white/5">
+                  <div className="flex items-center justify-between pt-4 border-t border-white/5">
                     <div className="flex items-center gap-2">
                       <div className="flex -space-x-1">
-                        <div className="w-4 h-4 rounded-full border border-slate-900 shadow-sm" style={{ backgroundColor: t.theme?.primaryColor || '#ea580c' }}></div>
-                        <div className="w-4 h-4 rounded-full border border-slate-900 shadow-sm" style={{ backgroundColor: t.theme?.secondaryColor || '#6366f1' }}></div>
+                        <div className="w-3 h-3 rounded-full border border-slate-900 shadow-sm" style={{ backgroundColor: t.theme?.primaryColor || '#ea580c' }}></div>
+                        <div className="w-3 h-3 rounded-full border border-slate-900 shadow-sm" style={{ backgroundColor: t.theme?.secondaryColor || '#6366f1' }}></div>
                       </div>
-                      <span className="text-[10px] md:text-xs font-bold text-slate-500">Config</span>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex gap-1.5">
                        <button 
                         onClick={() => {
                           setEditingTenant(t);
                           setShowEditModal(true);
                         }}
-                        className="p-2.5 bg-white/5 hover:bg-white/10 text-slate-300 rounded-xl transition-all border border-white/5"
+                        className="p-2 bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white rounded-lg transition-all border border-white/5"
                         title="Editar"
                       >
-                        <Edit3 size={16} />
+                        <Edit3 size={14} />
                       </button>
                       <button 
                         onClick={() => toggleTenantStatus(t)}
-                        className={`p-2.5 rounded-xl transition-all border ${
+                        className={`p-2 rounded-lg transition-all border ${
                           t.is_active 
                             ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500 hover:bg-emerald-500/20' 
                             : 'bg-rose-500/10 border-rose-500/20 text-rose-500 hover:bg-rose-500/20'
                         }`}
                         title={t.is_active ? 'Desactivar' : 'Activar'}
                       >
-                        <Power size={16} />
+                        <Power size={14} />
                       </button>
                       <button 
                         onClick={() => handleRepairTenant(t)}
-                        className="p-2.5 bg-white/5 hover:bg-blue-500/20 text-slate-500 hover:text-blue-500 rounded-xl transition-all border border-white/5"
-                        title="Sincronizar Repositorio (Fix)"
+                        className="p-2 bg-white/5 hover:bg-blue-500/10 text-slate-500 hover:text-blue-500 rounded-lg transition-all border border-white/5"
+                        title="Fix Plan"
                       >
-                        <RefreshCw size={16} />
+                        <RefreshCw size={14} />
                       </button>
                       <button 
-                        onClick={() => handleDeleteTenant(t.id)}
-                        className="p-2.5 bg-white/5 hover:bg-rose-500/20 text-slate-500 hover:text-rose-500 rounded-xl transition-all border border-white/5"
+                        onClick={() => openDeleteModal(t)}
+                        className="p-2 bg-white/5 hover:bg-rose-500/10 text-slate-500 hover:text-rose-500 rounded-lg transition-all border border-white/5"
                         title="Eliminar"
                       >
-                        <Trash2 size={16} />
+                        <Trash2 size={14} />
                       </button>
                     </div>
                   </div>
@@ -317,85 +348,98 @@ const SuperAdminView = () => {
 
         {/* Modal Nueva Empresa */}
         {showModal && (
-          <div className="fixed inset-0 bg-[#0f172a]/80 backdrop-blur-xl flex items-center justify-center p-4 z-100 animate-in fade-in duration-300 overflow-y-auto">
-            <div className="bg-slate-900 w-full max-w-2xl rounded-[2.5rem] p-6 md:p-10 shadow-2xl border border-white/10 relative my-8">
-              {/* Modal Decoration */}
-              <div className="absolute -top-24 -right-24 w-48 h-48 bg-orange-500/20 blur-[80px] rounded-full pointer-events-none"></div>
-
+          <div className="fixed inset-0 bg-slate-950/80 flex items-center justify-center p-4 z-100 animate-in fade-in duration-200 overflow-y-auto">
+            <div className="bg-slate-900 w-full max-w-2xl rounded-2xl p-6 md:p-8 border border-white/10 relative my-auto shadow-2xl">
               <div className="relative">
-                <div className="flex justify-between items-start mb-6 md:mb-8">
+                <div className="flex justify-between items-start mb-6">
                   <div>
-                    <h2 className="text-2xl md:text-3xl font-black text-white mb-2">Nueva Franquicia</h2>
-                    <p className="text-slate-400 text-sm md:text-base font-medium">Configura el núcleo y el despliegue.</p>
+                    <h2 className="text-xl md:text-2xl font-black text-white">Nueva Franquicia</h2>
+                    <p className="text-slate-500 text-xs font-bold uppercase tracking-wider">Configura el núcleo y el despliegue</p>
                   </div>
-                  <button onClick={() => setShowModal(false)} className="p-2 text-slate-500 hover:text-white bg-white/5 rounded-full transition-colors">
-                    <X size={24} />
+                  <button onClick={() => setShowModal(false)} className="p-1.5 text-slate-500 hover:text-white bg-white/5 rounded-lg transition-colors">
+                    <X size={20} />
                   </button>
                 </div>
                 
-                <form onSubmit={handleCreateTenant} className="space-y-8">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <form onSubmit={handleCreateTenant} className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Nombre Comercial</label>
                       <input 
                         type="text" required placeholder="Ej: Burger House"
-                        className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl focus:ring-2 focus:ring-orange-500 outline-none text-white placeholder:text-slate-600 font-bold transition-all"
+                        className="w-full bg-slate-950/50 border border-white/10 p-3.5 rounded-xl focus:ring-1 focus:ring-orange-500 outline-none text-white placeholder:text-slate-700 font-bold transition-all text-sm"
                         value={newTenant.name}
                         onChange={(e) => setNewTenant({...newTenant, name: e.target.value})}
                       />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Identificador de Repo (Slug)</label>
+                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Identificador Slug</label>
                       <input 
                         type="text" required placeholder="burger-house"
-                        className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl focus:ring-2 focus:ring-orange-500 outline-none text-white placeholder:text-slate-600 font-bold transition-all"
+                        className="w-full bg-slate-950/50 border border-white/10 p-3.5 rounded-xl focus:ring-1 focus:ring-orange-500 outline-none text-white placeholder:text-slate-700 font-bold transition-all text-sm"
                         value={newTenant.slug}
                         onChange={(e) => setNewTenant({...newTenant, slug: e.target.value.toLowerCase().replace(/\s+/g, '-')})}
                       />
                     </div>
                   </div>
 
-                  <div className="space-y-4">
-                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Identidad Visual (Colores)</label>
-                    <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-3">
+                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Identidad Visual</label>
+                    <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
                       <div className="relative group">
-                        <div className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
-                          <div className="w-5 h-5 rounded-full border border-white/20" style={{ backgroundColor: newTenant.primaryColor }}></div>
+                        <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                          <div className="w-4 h-4 rounded-full border border-white/20" style={{ backgroundColor: newTenant.primaryColor }}></div>
                         </div>
                         <input 
                           type="text" value={newTenant.primaryColor}
                           onChange={(e) => setNewTenant({...newTenant, primaryColor: e.target.value})}
-                          className="w-full bg-white/5 border border-white/10 p-4 pl-12 rounded-2xl text-xs text-white font-mono uppercase font-bold outline-none focus:ring-2 focus:ring-orange-500"
+                          className="w-full bg-slate-950/50 border border-white/10 p-3 pl-10 rounded-xl text-[10px] text-white font-mono uppercase font-bold outline-none focus:ring-1 focus:ring-orange-500"
                         />
                         <input 
                           type="color" value={newTenant.primaryColor}
                           onChange={(e) => setNewTenant({...newTenant, primaryColor: e.target.value})}
                           className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
                         />
-                        <span className="absolute -top-2 left-4 bg-slate-900 px-2 text-[8px] font-black text-slate-600 uppercase tracking-tighter">Primario</span>
+                        <span className="absolute -top-1.5 left-3 bg-slate-900 px-1.5 text-[7px] font-black text-slate-600 uppercase tracking-tighter">Primario</span>
                       </div>
                       <div className="relative group">
-                        <div className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
-                          <div className="w-5 h-5 rounded-full border border-white/20" style={{ backgroundColor: newTenant.secondaryColor }}></div>
+                        <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                          <div className="w-4 h-4 rounded-full border border-white/20" style={{ backgroundColor: newTenant.secondaryColor }}></div>
                         </div>
                         <input 
                           type="text" value={newTenant.secondaryColor}
                           onChange={(e) => setNewTenant({...newTenant, secondaryColor: e.target.value})}
-                          className="w-full bg-white/5 border border-white/10 p-4 pl-12 rounded-2xl text-xs text-white font-mono uppercase font-bold outline-none focus:ring-2 focus:ring-purple-500"
+                          className="w-full bg-slate-950/50 border border-white/10 p-3 pl-10 rounded-xl text-[10px] text-white font-mono uppercase font-bold outline-none focus:ring-1 focus:ring-purple-500"
                         />
                         <input 
                           type="color" value={newTenant.secondaryColor}
                           onChange={(e) => setNewTenant({...newTenant, secondaryColor: e.target.value})}
                           className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
                         />
-                        <span className="absolute -top-2 left-4 bg-slate-900 px-2 text-[8px] font-black text-slate-600 uppercase tracking-tighter">Secundario</span>
+                        <span className="absolute -top-1.5 left-3 bg-slate-900 px-1.5 text-[7px] font-black text-slate-600 uppercase tracking-tighter">Secundario</span>
+                      </div>
+                      <div className="relative group">
+                        <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                          <div className="w-4 h-4 rounded-full border border-white/20" style={{ backgroundColor: newTenant.accentColor1 }}></div>
+                        </div>
+                        <input 
+                          type="text" value={newTenant.accentColor1}
+                          onChange={(e) => setNewTenant({...newTenant, accentColor1: e.target.value})}
+                          className="w-full bg-slate-950/50 border border-white/10 p-3 pl-10 rounded-xl text-[10px] text-white font-mono uppercase font-bold outline-none focus:ring-1 focus:ring-amber-500"
+                        />
+                        <input 
+                          type="color" value={newTenant.accentColor1}
+                          onChange={(e) => setNewTenant({...newTenant, accentColor1: e.target.value})}
+                          className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                        />
+                        <span className="absolute -top-1.5 left-3 bg-slate-900 px-1.5 text-[7px] font-black text-slate-600 uppercase tracking-tighter">Acento 1</span>
                       </div>
                     </div>
                   </div>
 
-                  <div className="space-y-4">
-                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Funciones del Ecosistema</label>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  <div className="space-y-3">
+                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Funciones</label>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                       {Object.keys(newTenant.features).map((feat) => (
                         <button
                           key={feat}
@@ -405,36 +449,29 @@ const SuperAdminView = () => {
                             features: { ...newTenant.features, [feat]: !newTenant.features[feat] }
                           })}
                           className={`
-                            flex items-center gap-2 p-3 rounded-xl border text-[10px] md:text-xs font-black transition-all
+                            flex items-center gap-2 p-2.5 rounded-lg border text-[10px] font-bold transition-all
                             ${newTenant.features[feat] 
                               ? 'bg-orange-500/10 border-orange-500/30 text-orange-500' 
-                              : 'bg-white/5 border-white/5 text-slate-500 hover:text-slate-400'}
+                              : 'bg-white/5 border-white/5 text-slate-600 hover:text-slate-400'}
                           `}
                         >
-                          <CheckCircle2 size={14} className={newTenant.features[feat] ? 'opacity-100' : 'opacity-0'} />
+                          <CheckCircle2 size={12} className={newTenant.features[feat] ? 'opacity-100' : 'opacity-0'} />
                           {feat.replace('_', ' ').charAt(0).toUpperCase() + feat.replace('_', ' ').slice(1)}
                         </button>
                       ))}
                     </div>
                   </div>
 
-                  <div className="flex flex-col sm:flex-row gap-4 pt-6">
+                  <div className="flex flex-col sm:flex-row gap-3 pt-4">
                     <button 
                       type="submit" disabled={creatingRepo}
-                      className="order-1 sm:order-2 flex-1 py-4 bg-white text-slate-900 font-black rounded-2xl hover:bg-orange-500 hover:text-white flex items-center justify-center gap-3 disabled:opacity-50 transition-all shadow-xl shadow-orange-500/10"
+                      className="order-1 sm:order-2 flex-1 py-3.5 bg-white text-slate-950 font-black rounded-xl hover:bg-orange-500 hover:text-white transition-all flex items-center justify-center gap-2"
                     >
-                      {creatingRepo ? (
-                          <>
-                            <Loader2 className="animate-spin" size={20} />
-                            <span>Sincronizando...</span>
-                          </>
-                      ) : (
-                          'Registrar Franquicia'
-                      )}
+                      {creatingRepo ? <><Loader2 className="animate-spin" size={18} /> Sincronizando...</> : 'Registrar Empresa'}
                     </button>
                     <button 
                       type="button" onClick={() => setShowModal(false)}
-                      className="order-2 sm:order-1 flex-1 py-4 text-slate-500 font-bold hover:text-white hover:bg-white/5 rounded-2xl transition-all"
+                      className="order-2 sm:order-1 flex-1 py-3.5 text-slate-500 font-bold hover:text-white hover:bg-white/5 rounded-xl transition-all"
                     >
                       Cancelar
                     </button>
@@ -446,34 +483,34 @@ const SuperAdminView = () => {
         )}
         {/* Modal Editar Empresa */}
         {showEditModal && editingTenant && (
-          <div className="fixed inset-0 bg-[#0f172a]/80 backdrop-blur-xl flex items-center justify-center p-4 z-100 animate-in fade-in duration-300 overflow-y-auto">
-            <div className="bg-slate-900 w-full max-w-4xl rounded-[2.5rem] shadow-2xl border border-white/10 relative my-8 overflow-hidden flex flex-col max-h-[90vh]">
+          <div className="fixed inset-0 bg-slate-950/80 flex items-center justify-center p-4 z-100 animate-in fade-in duration-200 overflow-y-auto">
+            <div className="bg-slate-900 w-full max-w-3xl rounded-2xl shadow-2xl border border-white/10 relative my-auto overflow-hidden flex flex-col max-h-[95vh]">
               {/* Header */}
-              <div className="p-6 md:p-10 pb-0 flex justify-between items-start">
+              <div className="p-5 border-b border-white/5 flex justify-between items-center bg-slate-800/50">
                   <div>
-                    <h2 className="text-2xl md:text-3xl font-black text-white mb-2 line-clamp-1">{editingTenant.name}</h2>
-                    <p className="text-slate-400 text-sm md:text-base font-medium">Configuración avanzada de la franquicia.</p>
+                    <h2 className="text-lg md:text-xl font-black text-white">{editingTenant.name}</h2>
+                    <p className="text-slate-500 text-[10px] uppercase font-black tracking-widest">Gestión de Franquicia</p>
                   </div>
-                  <button onClick={() => setShowEditModal(false)} className="p-2 text-slate-500 hover:text-white bg-white/5 rounded-full transition-colors">
-                    <X size={24} />
+                  <button onClick={() => setShowEditModal(false)} className="p-1.5 text-slate-500 hover:text-white bg-white/5 rounded-lg transition-colors">
+                    <X size={18} />
                   </button>
               </div>
 
-              {/* Tabs Navigation */}
-              <div className="flex px-6 md:px-10 mt-6 border-b border-white/5 overflow-x-auto gap-4 no-scrollbar">
+              {/* Tabs Navigation - Compact */}
+              <div className="flex px-5 bg-slate-900 overflow-x-auto gap-2 no-scrollbar p-1">
                 {[
-                  { id: 'general', label: 'General', icon: <LayoutDashboard size={16} /> },
-                  { id: 'branding', label: 'Branding', icon: <LayoutDashboard size={16} /> }, // Using generic icon for now
-                  { id: 'business', label: 'Negocio', icon: <Building2 size={16} /> },
-                  { id: 'integrations', label: 'Integraciones', icon: <Globe size={16} /> }
+                  { id: 'general', label: 'General', icon: <LayoutDashboard size={14} /> },
+                  { id: 'branding', label: 'Branding', icon: <Plus size={14} /> },
+                  { id: 'business', label: 'Negocio', icon: <Building2 size={14} /> },
+                  { id: 'integrations', label: 'Integraciones', icon: <Globe size={14} /> }
                 ].map((tab) => (
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
-                    className={`pb-4 px-4 text-sm font-bold transition-all border-b-2 flex items-center gap-2 whitespace-nowrap ${
+                    className={`px-4 py-2 text-[11px] font-black transition-all rounded-lg flex items-center gap-2 whitespace-nowrap ${
                       activeTab === tab.id 
-                        ? 'border-orange-500 text-orange-500' 
-                        : 'border-transparent text-slate-500 hover:text-slate-300'
+                        ? 'bg-orange-500 text-white shadow-sm' 
+                        : 'text-slate-500 hover:bg-white/5'
                     }`}
                   >
                     {tab.icon}
@@ -482,77 +519,67 @@ const SuperAdminView = () => {
                 ))}
               </div>
 
-              {/* Modal Content - Scrollable */}
-              <div className="p-6 md:p-10 flex-1 overflow-y-auto">
-                <form id="edit-tenant-form" onSubmit={handleUpdateTenant} className="space-y-8">
+              {/* Modal Content - Compact Padding */}
+              <div className="p-5 flex-1 overflow-y-auto">
+                <form id="edit-tenant-form" onSubmit={handleUpdateTenant} className="space-y-6">
                   {activeTab === 'general' && (
-                    <div className="space-y-8 animate-in fade-in duration-300">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-6 animate-in fade-in duration-200">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-2">
                           <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Nombre Comercial</label>
                           <input 
                             type="text" required
-                            className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl focus:ring-2 focus:ring-orange-500 outline-none text-white font-bold transition-all"
+                            className="w-full bg-slate-950/50 border border-white/10 p-3 rounded-xl focus:ring-1 focus:ring-orange-500 outline-none text-white font-bold transition-all text-sm"
                             value={editingTenant.name}
                             onChange={(e) => setEditingTenant({...editingTenant, name: e.target.value})}
                           />
                         </div>
                         <div className="space-y-2">
-                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Estado del Sitio</label>
+                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Estado</label>
                           <button
                             type="button"
                             onClick={() => setEditingTenant({...editingTenant, is_active: !editingTenant.is_active})}
-                            className={`w-full p-4 rounded-2xl font-bold flex items-center justify-center gap-2 border transition-all ${
+                            className={`w-full p-2.5 rounded-xl font-bold flex items-center justify-center gap-2 border transition-all text-sm ${
                               editingTenant.is_active 
                                 ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500' 
                                 : 'bg-rose-500/10 border-rose-500/20 text-rose-500'
                             }`}
                           >
-                            <Power size={18} />
-                            {editingTenant.is_active ? 'Sitio Activo' : 'Sitio Desactivado'}
+                            <Power size={14} />
+                            {editingTenant.is_active ? 'Online' : 'Offline'}
                           </button>
                         </div>
                       </div>
 
-                      <div className="space-y-4">
-                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Colores del Tema</label>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          {/* Primary and Secondary Color Pickers */}
-                          <div className="flex items-center gap-4 bg-white/5 p-4 rounded-2xl border border-white/10">
-                            <input 
-                              type="color" 
-                              className="w-12 h-12 rounded-lg bg-transparent border-none cursor-pointer"
-                              value={editingTenant.theme?.primaryColor || '#ea580c'}
-                              onChange={(e) => setEditingTenant({
-                                ...editingTenant, 
-                                theme: { ...(editingTenant.theme || {}), primaryColor: e.target.value }
-                              })}
-                            />
-                            <div className="flex flex-col">
-                              <span className="text-[10px] font-bold text-slate-500 uppercase">Primario</span>
-                              <span className="text-white font-mono text-sm">{editingTenant.theme?.primaryColor || '#ea580c'}</span>
+                      <div className="space-y-3">
+                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Colores (Flat UI)</label>
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                          {[
+                            { id: 'primaryColor', label: 'Primario', val: editingTenant.theme?.primaryColor || '#ea580c' },
+                            { id: 'secondaryColor', label: 'Secundario', val: editingTenant.theme?.secondaryColor || '#6366f1' },
+                            { id: 'accentColor1', label: 'Acento 1', val: editingTenant.theme?.accentColor1 || '#f59e0b' }
+                          ].map((c) => (
+                            <div key={c.id} className="flex items-center gap-3 bg-slate-950/50 p-2.5 rounded-xl border border-white/5">
+                              <input 
+                                type="color" 
+                                className="w-8 h-8 rounded-lg bg-transparent border-none cursor-pointer"
+                                value={c.val}
+                                onChange={(e) => setEditingTenant({
+                                  ...editingTenant, 
+                                  theme: { ...(editingTenant.theme || {}), [c.id]: e.target.value }
+                                })}
+                              />
+                              <div className="flex flex-col">
+                                <span className="text-[9px] font-black text-slate-500 uppercase">{c.label}</span>
+                                <span className="text-white font-mono text-[10px] font-bold">{c.val}</span>
+                              </div>
                             </div>
-                          </div>
-                          <div className="flex items-center gap-4 bg-white/5 p-4 rounded-2xl border border-white/10">
-                            <input 
-                              type="color" 
-                              className="w-12 h-12 rounded-lg bg-transparent border-none cursor-pointer"
-                              value={editingTenant.theme?.secondaryColor || '#6366f1'}
-                              onChange={(e) => setEditingTenant({
-                                ...editingTenant, 
-                                theme: { ...(editingTenant.theme || {}), secondaryColor: e.target.value }
-                              })}
-                            />
-                            <div className="flex flex-col">
-                              <span className="text-[10px] font-bold text-slate-500 uppercase">Secundario</span>
-                              <span className="text-white font-mono text-sm">{editingTenant.theme?.secondaryColor || '#6366f1'}</span>
-                            </div>
-                          </div>
+                          ))}
                         </div>
                       </div>
 
-                      <div className="space-y-4">
-                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Funciones del Módulo</label>
+                      <div className="space-y-3">
+                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Funciones</label>
                         <div className="flex flex-wrap gap-2">
                           {Object.keys(editingTenant.features || {}).map((feat) => (
                             <button
@@ -562,14 +589,14 @@ const SuperAdminView = () => {
                                 ...editingTenant,
                                 features: { ...(editingTenant.features || {}), [feat]: !editingTenant.features?.[feat] }
                               })}
-                              className={`px-6 py-3 rounded-full text-xs font-bold border transition-all flex items-center gap-2 ${
+                              className={`px-4 py-2 rounded-lg text-[10px] font-black border transition-all flex items-center gap-2 ${
                                 editingTenant.features?.[feat]
                                   ? 'bg-orange-500/10 border-orange-500/30 text-orange-500'
-                                  : 'bg-white/5 border-white/10 text-slate-500'
+                                  : 'bg-white/5 border-white/5 text-slate-600'
                               }`}
                             >
-                              {editingTenant.features?.[feat] && <CheckCircle2 size={14} />}
-                              {feat.charAt(0).toUpperCase() + feat.slice(1).replace('_', ' ')}
+                              {editingTenant.features?.[feat] && <CheckCircle2 size={12} />}
+                              {feat.replace('_', ' ')}
                             </button>
                           ))}
                         </div>
@@ -578,33 +605,29 @@ const SuperAdminView = () => {
                   )}
 
                   {activeTab === 'branding' && (
-                    <div className="space-y-8 animate-in fade-in duration-300">
-                      <div className="space-y-4">
-                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Tipografía (Google Fonts)</label>
+                    <div className="space-y-6 animate-in fade-in duration-200">
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Tipografía</label>
                         <select 
-                          className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl focus:ring-2 focus:ring-orange-500 outline-none text-white font-bold transition-all"
+                          className="w-full bg-slate-950/50 border border-white/10 p-3 rounded-xl outline-none text-white font-bold text-sm"
                           value={editingTenant.branding?.fontFamily || 'Inter'}
                           onChange={(e) => setEditingTenant({
                             ...editingTenant,
                             branding: { ...(editingTenant.branding || {}), fontFamily: e.target.value }
                           })}
                         >
-                          <option value="Inter">Inter (Sleek Sans)</option>
-                          <option value="Roboto">Roboto (Classic Sans)</option>
-                          <option value="Montserrat">Montserrat (Modern Sans)</option>
-                          <option value="Playfair Display">Playfair Display (Premium Serif)</option>
-                          <option value="Outfit">Outfit (Clean Geometric)</option>
-                          <option value="Space Grotesk">Space Grotesk (Tech Quirky)</option>
+                          <option value="Inter">Inter (Sans)</option>
+                          <option value="Outfit">Outfit (Geometric)</option>
+                          <option value="Roboto">Roboto (Classic)</option>
                         </select>
                       </div>
 
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-2">
-                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">URL del Logo (Light/Dark)</label>
+                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Logo URL</label>
                           <input 
-                            type="text"
-                            placeholder="https://.../logo.png"
-                            className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl focus:ring-2 focus:ring-orange-500 outline-none text-white font-bold transition-all"
+                            type="text" placeholder="https://..."
+                            className="w-full bg-slate-950/50 border border-white/10 p-3 rounded-xl outline-none text-white font-bold text-sm"
                             value={editingTenant.branding?.logo_url || ''}
                             onChange={(e) => setEditingTenant({
                               ...editingTenant,
@@ -613,11 +636,10 @@ const SuperAdminView = () => {
                           />
                         </div>
                         <div className="space-y-2">
-                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">URL del Favicon</label>
+                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Favicon URL</label>
                           <input 
-                            type="text"
-                            placeholder="https://.../favicon.ico"
-                            className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl focus:ring-2 focus:ring-orange-500 outline-none text-white font-bold transition-all"
+                            type="text" placeholder="https://..."
+                            className="w-full bg-slate-950/50 border border-white/10 p-3 rounded-xl outline-none text-white font-bold text-sm"
                             value={editingTenant.branding?.favicon_url || ''}
                             onChange={(e) => setEditingTenant({
                               ...editingTenant,
@@ -630,13 +652,13 @@ const SuperAdminView = () => {
                   )}
 
                   {activeTab === 'business' && (
-                    <div className="space-y-6 animate-in fade-in duration-300">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-4 animate-in fade-in duration-200">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-2">
-                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">WhatsApp de Pedidos</label>
+                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">WhatsApp</label>
                           <input 
-                            type="text" placeholder="+584120000000"
-                            className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl focus:ring-2 focus:ring-orange-500 outline-none text-white font-bold transition-all"
+                            type="text" placeholder="+58412..."
+                            className="w-full bg-slate-950/50 border border-white/10 p-3 rounded-xl outline-none text-white font-bold text-sm"
                             value={editingTenant.contact_info?.whatsapp || ''}
                             onChange={(e) => setEditingTenant({
                               ...editingTenant,
@@ -645,10 +667,10 @@ const SuperAdminView = () => {
                           />
                         </div>
                         <div className="space-y-2">
-                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Instagram (@usuario)</label>
+                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Instagram</label>
                           <input 
-                            type="text" placeholder="@burgerhouse"
-                            className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl focus:ring-2 focus:ring-orange-500 outline-none text-white font-bold transition-all"
+                            type="text" placeholder="@usuario"
+                            className="w-full bg-slate-950/50 border border-white/10 p-3 rounded-xl outline-none text-white font-bold text-sm"
                             value={editingTenant.contact_info?.instagram || ''}
                             onChange={(e) => setEditingTenant({
                               ...editingTenant,
@@ -658,11 +680,10 @@ const SuperAdminView = () => {
                         </div>
                       </div>
                       <div className="space-y-2">
-                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Dirección Física</label>
+                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Dirección</label>
                         <textarea 
-                          rows="2"
-                          placeholder="Calle principal, CC Sambil, Nivel 2..."
-                          className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl focus:ring-2 focus:ring-orange-500 outline-none text-white font-bold transition-all resize-none"
+                          rows="2" placeholder="Ubicación física..."
+                          className="w-full bg-slate-950/50 border border-white/10 p-3 rounded-xl outline-none text-white font-bold text-sm resize-none"
                           value={editingTenant.contact_info?.address || ''}
                           onChange={(e) => setEditingTenant({
                             ...editingTenant,
@@ -674,23 +695,13 @@ const SuperAdminView = () => {
                   )}
 
                   {activeTab === 'integrations' && (
-                    <div className="space-y-6 animate-in fade-in duration-300">
-                      <div className="space-y-4">
-                         <div className="p-4 bg-blue-500/10 border border-blue-500/20 rounded-2xl flex gap-4 items-center">
-                            <div className="w-10 h-10 bg-blue-500 text-white rounded-full flex items-center justify-center shrink-0">
-                               <Globe size={20} />
-                            </div>
-                            <p className="text-xs text-blue-200 leading-relaxed font-medium">
-                               Conecta herramientas de terceros para medir el éxito de la franquicia.
-                            </p>
-                         </div>
-                      </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-4 animate-in fade-in duration-200">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-2">
-                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Google Analytics (UA/G-)</label>
+                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Google Analytics</label>
                           <input 
                             type="text" placeholder="G-XXXXXXXXXX"
-                            className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl focus:ring-2 focus:ring-orange-500 outline-none text-white font-bold transition-all"
+                            className="w-full bg-slate-950/50 border border-white/10 p-3 rounded-xl outline-none text-white font-bold text-sm"
                             value={editingTenant.integrations?.google_analytics_id || ''}
                             onChange={(e) => setEditingTenant({
                               ...editingTenant,
@@ -699,10 +710,10 @@ const SuperAdminView = () => {
                           />
                         </div>
                         <div className="space-y-2">
-                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Facebook Pixel ID</label>
+                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">FB Pixel ID</label>
                           <input 
                             type="text" placeholder="1234567890"
-                            className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl focus:ring-2 focus:ring-orange-500 outline-none text-white font-bold transition-all"
+                            className="w-full bg-slate-950/50 border border-white/10 p-3 rounded-xl outline-none text-white font-bold text-sm"
                             value={editingTenant.integrations?.fb_pixel_id || ''}
                             onChange={(e) => setEditingTenant({
                               ...editingTenant,
@@ -717,21 +728,71 @@ const SuperAdminView = () => {
               </div>
 
               {/* Footer */}
-              <div className="p-6 md:p-10 bg-slate-800/50 border-t border-white/5 flex gap-4">
+              <div className="p-4 bg-slate-800/50 border-t border-white/5 flex gap-3">
                   <button 
-                    type="button"
-                    onClick={() => setShowEditModal(false)}
-                    className="flex-1 px-8 py-4 rounded-2xl font-bold text-slate-400 hover:text-white hover:bg-white/5 transition-all"
+                    type="button" onClick={() => setShowEditModal(false)}
+                    className="flex-1 px-6 py-3 rounded-xl font-bold text-slate-500 hover:text-white hover:bg-white/5 transition-all text-sm"
                   >
                     Cerrar
                   </button>
                   <button 
-                    form="edit-tenant-form"
-                    type="submit"
-                    className="flex-2 bg-orange-500 hover:bg-orange-600 text-white px-8 py-4 rounded-2xl font-black transition-all shadow-xl shadow-orange-500/20"
+                    form="edit-tenant-form" type="submit"
+                    className="flex-2 bg-white text-slate-950 hover:bg-orange-500 hover:text-white px-8 py-3 rounded-xl font-black transition-all text-sm"
                   >
                     Guardar Cambios
                   </button>
+              </div>
+            </div>
+          </div>
+        )}
+        {/* Modal de Confirmación de Eliminación */}
+        {showDeleteConfirm && tenantToDelete && (
+          <div className="fixed inset-0 bg-slate-950/90 flex items-center justify-center p-4 z-200 animate-in fade-in zoom-in duration-200">
+            <div className="bg-slate-900 w-full max-w-md rounded-2xl p-8 border border-rose-500/20 shadow-2xl shadow-rose-500/10">
+              <div className="flex flex-col items-center text-center">
+                <div className="w-20 h-20 bg-rose-500/10 rounded-full flex items-center justify-center mb-6 border border-rose-500/20">
+                  <Trash2 className="text-rose-500" size={32} />
+                </div>
+                <h2 className="text-2xl font-black text-white mb-2 tracking-tight">Acción Destructiva</h2>
+                <p className="text-slate-400 text-sm mb-8 leading-relaxed">
+                  Estás a punto de eliminar permanentemente a <span className="text-white font-black">{tenantToDelete.name}</span>. Todos los productos, pedidos y configuraciones se perderán para siempre.
+                </p>
+                
+                <div className="w-full space-y-4">
+                  <div className="text-left">
+                    <label className="text-[10px] font-black text-rose-500 uppercase tracking-[0.2em] mb-2 block">
+                      Escribe <span className="underline">{tenantToDelete.slug}</span> para confirmar
+                    </label>
+                    <input 
+                      type="text"
+                      className="w-full bg-slate-950 border border-white/10 p-4 rounded-xl focus:ring-1 focus:ring-rose-500 outline-none text-white font-bold transition-all text-center"
+                      placeholder={tenantToDelete.slug}
+                      value={deleteInput}
+                      onChange={(e) => setDeleteInput(e.target.value)}
+                    />
+                  </div>
+                  
+                  <div className="flex flex-col gap-3">
+                    <button
+                      onClick={handleDeleteTenant}
+                      disabled={deleteInput !== tenantToDelete.slug || isDeleting}
+                      className={`
+                        w-full py-4 rounded-xl font-black text-sm uppercase tracking-widest transition-all
+                        ${deleteInput === tenantToDelete.slug 
+                          ? 'bg-rose-600 text-white hover:bg-rose-500 shadow-lg shadow-rose-600/20' 
+                          : 'bg-slate-800 text-slate-600 cursor-not-allowed'}
+                      `}
+                    >
+                      {isDeleting ? <Loader2 className="animate-spin mx-auto" size={20} /> : 'Confirmar Eliminación'}
+                    </button>
+                    <button
+                      onClick={() => setShowDeleteConfirm(false)}
+                      className="w-full py-3 text-slate-500 font-bold hover:text-white transition-all text-sm"
+                    >
+                      Mejor no, cancelar
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           </div>

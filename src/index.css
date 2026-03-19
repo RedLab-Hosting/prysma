@@ -1,1 +1,14 @@
 @import "tailwindcss";
+
+* {
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+}
+
+/* Allow selection in inputs and textareas */
+input, textarea {
+  user-select: text;
+  -webkit-user-select: text;
+}

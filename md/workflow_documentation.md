@@ -8,7 +8,7 @@ Este documento describe el ciclo de vida de un pedido en la plataforma, detallan
 
 El cliente interactúa con la web app para armar su pedido.
 
-1.  **Selección**: El cliente añade productos al carrito, personalizando ingredientes (algunos de estos añaden costo adicional, esto es configurable desde el panel admin en la pestaña de productos > editar producto > ingredientes y añade la descripción y el costo adicional si aplica) o notas.
+1.  **Selección**: El cliente navega por las categorías (diseño horizontal) y añade productos al carrito. Puede personalizar ingredientes y extras mediante un modal interactivo con micro-animaciones.
 2.  **Checkout**:
     - Ingresa sus datos (Nombre, Apellido, Teléfono, referencia de ubicación.).
     - Selecciona el método: **Delivery** (marca su ubicación en el mapa Leaflet o la captura ubicacion exacta con el boton de gps) o **Retiro en tienda**.

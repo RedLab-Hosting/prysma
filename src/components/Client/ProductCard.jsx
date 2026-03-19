@@ -28,15 +28,15 @@ const ProductCard = ({ product, exchangeRate = 1 }) => {
   return (
     <motion.div 
       layout
-      className="relative flex flex-col bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md rounded-2xl overflow-hidden border border-zinc-200 dark:border-zinc-800 shadow-lg hover:shadow-xl transition-all duration-300"
+      className="relative flex flex-col h-full bg-white/80 backdrop-blur-md rounded-2xl overflow-hidden border border-zinc-200 transition-all duration-300"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       whileHover={{ y: -4 }}
     >
       {/* Product Image */}
-      <div className="relative aspect-square overflow-hidden group">
+      <div className="relative aspect-square overflow-hidden shrink-0">
         <img 
-          src={product.image_url || 'https://via.placeholder.com/400x400?text=Producto'} 
+          src={product.image_url || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=800&auto=format&fit=crop'} 
           alt={product.name}
           className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
         />
@@ -47,7 +47,7 @@ const ProductCard = ({ product, exchangeRate = 1 }) => {
             <span className="text-white font-bold text-sm">${product.price.toFixed(2)}</span>
           </div>
           <div className="bg-white/40 backdrop-blur-sm px-2 py-0.5 rounded-full border border-white/40">
-            <span className="text-zinc-900 dark:text-zinc-100 font-medium text-[10px]">{priceBs} Bs.</span>
+            <span className="text-zinc-900 font-extrabold text-[10px]">{priceBs} Bs.</span>
           </div>
         </div>
 
@@ -58,49 +58,49 @@ const ProductCard = ({ product, exchangeRate = 1 }) => {
               initial={{ scale: 0, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0, opacity: 0 }}
-              className="absolute top-3 left-3 w-8 h-8 bg-primary rounded-full flex items-center justify-center border-2 border-white shadow-md"
+              className="absolute top-3 left-3 w-8 h-8 bg-primary rounded-full flex items-center justify-center border-2 border-white z-10"
               style={{ backgroundColor: 'var(--primary-color, #ea580c)' }}
             >
-              <span className="text-white font-bold text-sm">{quantityInCart}</span>
+              <span className="text-white font-black text-sm">{quantityInCart}</span>
             </motion.div>
           )}
         </AnimatePresence>
       </div>
 
       {/* Product Info */}
-      <div className="p-4 flex flex-col flex-grow">
-        <h3 className="text-zinc-900 dark:text-white font-bold text-lg mb-1 leading-tight">
+      <div className="p-4 flex flex-col grow">
+        <h3 className="text-zinc-900 font-black text-base mb-1 leading-tight line-clamp-2 min-h-10">
           {product.name}
         </h3>
-        <p className="text-zinc-500 dark:text-zinc-400 text-xs line-clamp-2 mb-4">
-          {product.description || 'Sin descripción disponible'}
+        <p className="text-zinc-500 text-[11px] leading-relaxed line-clamp-2 mb-4 grow">
+          {product.description || 'Disfruta de nuestra especialidad preparada con los mejores ingredientes.'}
         </p>
 
         {/* Actions */}
-        <div className="mt-auto">
+        <div className="mt-auto pt-2">
           {quantityInCart === 0 ? (
             <button
               onClick={handleAddClick}
-              className="w-full py-2.5 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 rounded-xl font-bold text-sm flex items-center justify-center gap-2 hover:bg-zinc-800 dark:hover:bg-zinc-200 active:scale-95 transition-all"
+              className="w-full py-3 bg-zinc-900 text-white rounded-xl font-black text-xs uppercase tracking-tighter flex items-center justify-center gap-2 hover:bg-zinc-800 active:scale-95 transition-all"
             >
-              <Plus size={18} />
-              Añadir al carrito
+              <Plus size={16} strokeWidth={3} />
+              Agregar
             </button>
           ) : (
             <div className="flex items-center gap-2">
-              <div className="flex-1 flex items-center justify-between bg-zinc-100 dark:bg-zinc-800 rounded-xl p-1 border border-zinc-200 dark:border-zinc-700">
+              <div className="flex-1 flex items-center justify-between bg-zinc-100 rounded-xl p-1 border border-zinc-200">
                 <button 
                   onClick={() => updateQuantity(product.id, -1)}
-                  className="w-10 h-10 flex items-center justify-center text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-lg transition-colors"
+                  className="w-9 h-9 flex items-center justify-center text-zinc-600 hover:bg-white rounded-lg transition-all active:scale-90"
                 >
-                  <Minus size={16} />
+                  <Minus size={16} strokeWidth={3} />
                 </button>
-                <span className="font-bold text-zinc-900 dark:text-white">{quantityInCart}</span>
+                <span className="font-black text-zinc-900">{quantityInCart}</span>
                 <button 
                   onClick={() => updateQuantity(product.id, 1)}
-                  className="w-10 h-10 flex items-center justify-center text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-lg transition-colors"
+                  className="w-9 h-9 flex items-center justify-center text-zinc-600 hover:bg-white rounded-lg transition-all active:scale-90"
                 >
-                  <Plus size={16} />
+                  <Plus size={16} strokeWidth={3} />
                 </button>
               </div>
             </div>

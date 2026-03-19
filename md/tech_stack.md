@@ -16,8 +16,9 @@ Esta es una lista detallada de los componentes externos e internos que hacen fun
 
 - **Supabase**: Backend-as-a-Service (BaaS) que provee:
   - **PostgreSQL**: Base de datos relacional.
-  - **Auth**: Gestión de usuarios y sesiones.
+  - **Auth**: Gestión de usuarios y sesiones vinculada a `AuthContext.jsx`.
   - **Edge Functions / Realtime**: Para actualizaciones en vivo de pedidos.
+- **Unsplash API**: Utilizada para la obtención de imágenes de alta calidad en el modo catálogo/demo.
 - **Service Workers**: Implementados para convertir la app en una **PWA (Progressive Web App)**, permitiendo instalación en móviles y funcionamiento offline básico.
 
 ### Geolocalización y Mapas
@@ -37,8 +38,10 @@ Esta es una lista detallada de los componentes externos e internos que hacen fun
 
 ### Gestión de Multi-Tenant (Multi-Empresa)
 
-- **TenantContext**: Sistema que detecta qué empresa está accediendo (vía URL o ID) y carga automáticamente sus colores, logo, bancos y productos.
+- **TenantContext**: Sistema que detecta qué empresa está accediendo (vía URL o slug) y carga automáticamente sus colores, fuentes y configuración desde Supabase. Inicializa los servicios de datos (`productService`, `categoryService`, `orderService`) con el ID del tenant. Refactoreado para soportar rutas de sistema sin colisiones.
+- **AuthContext**: Gestiona el estado de autenticación global mediante Supabase Auth, permitiendo flujos de inicio de sesión persistentes para Admin y Delivery.
 - **tenant.config.js**: Archivo maestro que define las características habilitadas por cada cliente.
+- **categoryService / productService**: Servicios especializados que heredan de `BaseService` para gestionar el catálogo con aislamiento de datos RLS.
 
 ### Finanzas y Pagos
 

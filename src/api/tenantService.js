@@ -5,7 +5,7 @@ export const tenantService = {
    * Creates a new tenant (company) in the database
    */
   async createTenant(tenantData) {
-    const { name, slug, customDomain, primaryColor, secondaryColor, features } = tenantData;
+    const { name, slug, customDomain, primaryColor, secondaryColor, accentColor1, accentColor2, accentColor3, features } = tenantData;
 
     try {
       const { data, error } = await supabase
@@ -18,6 +18,9 @@ export const tenantService = {
             theme: {
               primaryColor: primaryColor || '#ea580c',
               secondaryColor: secondaryColor || '#6366f1',
+              accentColor1: accentColor1 || '#f59e0b',
+              accentColor2: accentColor2 || '#10b981',
+              accentColor3: accentColor3 || '#3b82f6',
               darkMode: false,
               fontFamily: 'Inter'
             },
