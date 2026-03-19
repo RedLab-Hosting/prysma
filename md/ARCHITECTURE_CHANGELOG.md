@@ -8,6 +8,8 @@
 - **Unsplash Integration**: Buscador de imágenes por categoría en el modal de productos.
 - **Mobile Menu Refactor**: Cambio de posición del menú lateral a la derecha para mejor usabilidad.
 - **Price Engine v2**: Integración de tasa de cambio real en todas las vistas de cliente/checkout.
+- **GitHub Pages Fix**: Implementación de detección de `basename` dinámico y extracción de `tenantSlug` desde el path de la URL para soportar subcarpetas de repositorios.
+- **Root-Path Storefront**: Configuración de `App.jsx` para mostrar la tienda directamente en el root del dominio de la empresa (ej: `/sushi/`).
 
 ## [1.5.0] - 2026-03-18
 ### Added

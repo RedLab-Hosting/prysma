@@ -90,5 +90,7 @@ src/
 - **Framer Motion**: Animaciones fluidas en transiciones de páginas y modales.
 - **Diseño Ergonómico**: Menú lateral (Mobile) desplazado a la derecha para fácil acceso táctil.
 - **Real-time Engine**: Cambios en configuración y tasas se ven al instante en el cliente.
+- **Universal Subfolder Support**: Compatibilidad nativa con GitHub Pages sin necesidad de configurar el `base` de Vite manualmente por cada repositorio.
+- **Automatic Slug Inference**: El núcleo deduce la identidad del local basado en el nombre del repositorio en GitHub.
 
 ---

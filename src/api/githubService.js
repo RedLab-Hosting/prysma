@@ -82,6 +82,14 @@ export const githubService = {
   },
 
   /**
+   * Sets up secrets for the core repository (template)
+   */
+  async setupCoreSecrets() {
+    const coreRepo = 'prysma';
+    return this.setupTenantSecrets(coreRepo);
+  },
+
+  /**
    * Manually triggers the deployment workflow
    */
   async dispatchWorkflow(repoName) {

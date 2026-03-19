@@ -29,6 +29,7 @@ const SuperAdminView = () => {
   });
 
   const [creatingRepo, setCreatingRepo] = useState(false);
+  const [isSyncingCore, setIsSyncingCore] = useState(false);
   const [editingTenant, setEditingTenant] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [activeTab, setActiveTab] = useState('general');
@@ -187,6 +188,28 @@ const SuperAdminView = () => {
     }
   };
 
+  const handleSetupCoreSecrets = async () => {
+    if (!confirm('Esto configurará automáticamente los secretos (Supabase URL/Key/Token) en el repositorio CORE (prysma) para resolver errores de despliegue. ¿Continuar?')) return;
+    
+    setIsSyncingCore(true);
+    try {
+      const results = await githubService.setupCoreSecrets();
+      const failed = results.filter(r => !r.success);
+      
+      if (failed.length === 0) {
+        // Trigger build for core
+        await githubService.dispatchWorkflow('prysma');
+        alert('¡Secretos del Core configurados con éxito! El despliegue se ha reiniciado.');
+      } else {
+        alert('Error al configurar algunos secretos: ' + failed.map(f => f.error).join(', '));
+      }
+    } catch (err) {
+      alert('Error crítico: ' + err.message);
+    } finally {
+      setIsSyncingCore(false);
+    }
+  };
+
   const openDeleteModal = (tenant) => {
     setTenantToDelete(tenant);
     setDeleteInput('');
@@ -249,13 +272,23 @@ const SuperAdminView = () => {
               <h1 className="text-2xl md:text-3xl font-black text-white tracking-tight mb-1">Panel de Control</h1>
               <p className="text-slate-500 font-medium text-sm">Gestiona tu ecosistema de franquicias inteligentes</p>
             </div>
-            <button 
-              onClick={() => setShowModal(true)}
-              className="w-full lg:w-auto bg-white text-slate-900 hover:bg-orange-500 hover:text-white px-6 py-3.5 rounded-xl font-bold flex items-center justify-center gap-2 transition-all transform hover:scale-[1.02] active:scale-95 shadow-sm"
-            >
-              <Plus size={18} /> 
-              Registrar Empresa
-            </button>
+            <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
+              <button 
+                onClick={handleSetupCoreSecrets}
+                disabled={isSyncingCore}
+                className="bg-slate-800 text-white hover:bg-slate-700 px-6 py-3.5 rounded-xl font-bold flex items-center justify-center gap-2 transition-all border border-white/5 disabled:opacity-50"
+              >
+                {isSyncingCore ? <Loader2 size={18} className="animate-spin" /> : <Settings size={18} />}
+                Configurar Core
+              </button>
+              <button 
+                onClick={() => setShowModal(true)}
+                className="bg-white text-slate-900 hover:bg-orange-500 hover:text-white px-6 py-3.5 rounded-xl font-bold flex items-center justify-center gap-2 transition-all transform hover:scale-[1.02] active:scale-95 shadow-sm"
+              >
+                <Plus size={18} /> 
+                Registrar Empresa
+              </button>
+            </div>
           </header>
 
           {loading ? (

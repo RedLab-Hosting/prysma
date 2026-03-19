@@ -291,7 +291,7 @@ const ProductModal = ({ isOpen, onClose, onSave, product }) => {
             <button 
               type="submit"
               onClick={handleSubmit}
-              className="flex-[2] py-3.5 bg-zinc-900 text-white rounded-2xl font-black text-sm uppercase tracking-widest hover:scale-[1.01] active:scale-95 transition-all"
+              className="flex-1 py-3.5 bg-zinc-900 text-white rounded-2xl font-black text-sm uppercase tracking-widest hover:scale-[1.01] active:scale-95 transition-all"
             >
               Guardar Producto
             </button>
