@@ -83,4 +83,9 @@ Esta es una lista detallada de los componentes externos e internos que hacen fun
 
 ---
 
-_Actualizado: 2026-03-25_
+_Actualizado: 2026-03-28_
+
+### Cambios Clave (v2.4.0):
+- Soporte nativo para `leaflet-routing-machine`.
+- Servicios de `productService.js` y `categoryService.js` ahora son 100% transaccionales con Supabase.
+- Estructura de vistas móvil-primero para repartidores.

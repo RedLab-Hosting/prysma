@@ -31,7 +31,14 @@ Cuando hagas cambios en el repositorio `prysma` (corrección de bugs, nuevas fea
    git push origin main
    ```
 
-## 3. Archivos que NO deben compartirse
+## 3. Actualización Global (Core a Ramas)
+Para enviar cambios desde el núcleo (`prysma`) hacia todas las ramas de forma simplificada, utiliza el script configurado:
+```bash
+npm run deploy
+```
+Este comando ejecutará un `git push origin main`, disparando los Workflows de GitHub Actions para el despliegue.
+
+## 4. Archivos que NO deben compartirse
 Cada empresa tendrá su propio archivo `.env` para conectar a su propia instancia de Supabase (si decides bases de datos separadas) o simplemente para definir su `TENANT_ID`.
 
 > [!IMPORTANT]

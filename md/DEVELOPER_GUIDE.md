@@ -63,7 +63,7 @@ src/
 │   ├── categoryService.js  # Categorías (multi-tenant)
 │   └── orderService.js     # Pedidos (multi-tenant)
 ├── components/
-│   ├── Admin/       # ProductModal (crear/editar)
+│   ├── Admin/       # ProductModal (crear/editar productos con Supabase)
 │   ├── Client/      # ProductCard, ProductModal
 │   └── Common/      # ErrorBoundary
 ├── context/
@@ -72,9 +72,9 @@ src/
 │   └── AuthContext.jsx   # Sesiones Supabase
 ├── views/
 │   ├── SuperAdmin/  # Gestión de franquicias + Configurar Core
-│   ├── Admin/       # Dashboard del negocio con visualización de pedidos en vivo
-│   ├── Client/      # Storefront, Cart, Checkout, y OrderTrackingView
-│   ├── Delivery/    # DeliveryView para repartidores
+│   ├── Admin/       # Dashboard con persistencia REAL de productos/categorías
+│   ├── Client/      # Storefront (sin mocks), Cart, Checkout
+│   ├── Delivery/    # DeliveryView (Tabs: Activo, Historial, Ganancias + Leaflet Routing)
 │   └── Login/       # LoginView
 └── utils/           # featureFlags.js, whatsappUtils.js
 ```

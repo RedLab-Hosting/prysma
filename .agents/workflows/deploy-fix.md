@@ -11,7 +11,9 @@ Si una franquicia aparece en blanco o tiene errores de secretos, sigue este fluj
    - Cambiará el "Source" de Pages a **Actions** vía API.
    - Disparará un **Workflow Dispatch** inmediato.
 
-// turbo 4. **Verificar Despliegue**: Pídele a Antigravity que revise el estado de las Actions en GitHub para confirmar que el build terminó con éxito.
+4. **Actualización Global**: Si los cambios son a nivel de código núcleo, usa `npm run deploy` para empujar los cambios a todas las sedes automáticamente.
+
+// turbo 5. **Verificar Despliegue**: Pídele a Antigravity que revise el estado de las Actions en GitHub para confirmar que el build terminó con éxito.
 
 ### Notas Técnicas:
 

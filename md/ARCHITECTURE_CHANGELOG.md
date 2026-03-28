@@ -1,5 +1,12 @@
 # Registro de Cambios y Arquitectura (Prysma)
 
+## [2.4.0] - 2026-03-28
+### Added
+- **Supabase Data Persistence**: Los productos y categorías ahora se gestionan 100% en la base de datos vinculados al `tenant_id`, eliminando el uso de mocks estáticos en el storefront.
+- **Advanced Delivery UI**: Rediseño radical de la vista de repartidores con navegación por pestañas (`Activo`, `Historial`, `Ganancias`) y trazado de rutas GPS mediante `leaflet-routing-machine`.
+- **Global Sync Strategy**: Implementación de `npm run deploy` en el núcleo para propagar actualizaciones de código a todas las franquicias vía GitHub Actions.
+- **Admin Category Management**: Nueva interfaz en el dashboard para crear categorías dinámicas por empresa.
+
 ## [2.3.0] - 2026-03-26
 ### Added
 - **Cart UX Overhaul**: Reemplazo completo de la página estática `/cart` por un `CartDrawer` altamente responsivo (Overlay lateral en Desktop, Deslizante inferior en Móvil).
@@ -148,3 +155,28 @@
     - Refactorización de `TenantContext.jsx` para evitar colisiones de rutas entre slugs de empresa y rutas del sistema (`/admin`, `/login`).
     - Implementación de pantallas de error amigables ("Empresa no encontrada") para mejorar la experiencia del usuario ante enlaces rotos.
 - **Preferencia de Diseño**: Desactivación temporal del modo oscuro para garantizar una visualización consistente y "limpia" en todas las vistas de cliente.
+
+## 11. Estructura del Proyecto (Arquitectura Actual)
+```
+├── src/
+│   ├── api/                       # 9 servicios (Supabase, GitHub, BCV, Products, Categories)
+│   ├── components/
+│   │   ├── Admin/                 # ProductModal (persistencia Supabase)
+│   │   ├── Client/                # ProductCard, ProductModal (cliente)
+│   │   └── Common/                # ErrorBoundary
+│   ├── context/                   # TenantContext, AuthContext, CartContext
+│   ├── utils/                     # featureFlags, whatsappUtils
+│   ├── views/
+│   │   ├── SuperAdmin/            # Panel de control de franquicias
+│   │   ├── Admin/                 # Dashboard persistente (CRUD real)
+│   │   ├── Client/                # Storefront (sin mocks) + Checkout
+│   │   ├── Delivery/              # App Repartidor con Routing y Pestañas
+│   │   └── Login/                 # LoginView
+│   ├── App.jsx                    # Router con basename dinámico
+│   ├── main.jsx                   # Punto de entrada
+│   └── index.css                  # Tailwind v4 imports
+├── .env                           # Variables de entorno (VITE_ prefix)
+├── SUPABASE_SETUP.sql             # Script de base de datos idempotente
+├── vite.config.js                 # base: './' para GitHub Pages
+└── package.json
+```
