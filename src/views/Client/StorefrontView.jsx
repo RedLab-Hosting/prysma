@@ -50,68 +50,14 @@ const StorefrontView = () => {
           productService.getAll()
         ]);
         
-        let finalCats = cats;
-        let finalProds = prods;
-
-        // Fallback to mock data if empty
-        if (cats.length === 0 && prods.length === 0) {
-          console.log("Using mock data fallback (database is empty)");
-          finalCats = [
-            { id: '1', name: 'Hamburguesas', icon: '🍔' },
-            { id: '2', name: 'Pizzas', icon: '🍕' },
-            { id: '3', name: 'Bebidas', icon: '🥤' }
-          ];
-          finalProds = [
-            { 
-              id: 'p1', 
-              name: 'Classic Burger', 
-              price: 8.50, 
-              description: 'Carne 200g, queso cheddar, lechuga, tomate y salsa especial.',
-              category_id: '1',
-              image_url: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?q=80&w=800&auto=format&fit=crop',
-              hasModifiers: true,
-              modifiers: [
-                { name: 'Extra Queso Cheddar', extraPrice: 1.50 },
-                { name: 'Tocineta Crujiente', extraPrice: 2.00 },
-                { name: 'Huevo Frito', extraPrice: 1.00 },
-                { name: 'Doble Carne', extraPrice: 3.50 }
-              ]
-            },
-            { 
-              id: 'p2', 
-              name: 'Pepperoni Pizza', 
-              price: 12.00, 
-              description: 'Masa artesanal, salsa pomodoro, mozzarella y mucho pepperoni.', 
-              category_id: '2',
-              image_url: 'https://images.unsplash.com/photo-1628840042765-356cda07504e?q=80&w=800&auto=format&fit=crop'
-            },
-            { 
-              id: 'p3', 
-              name: 'Coca-Cola', 
-              price: 1.50, 
-              description: 'Original 355ml bien fría.', 
-              category_id: '3',
-              image_url: 'https://images.unsplash.com/photo-1622483767028-3f66f32aef97?q=80&w=800&auto=format&fit=crop'
-            },
-            { 
-              id: 'p4', 
-              name: 'Double Bacon Burger', 
-              price: 10.50, 
-              description: 'Doble carne, doble tocineta, salsa BBQ casera.', 
-              category_id: '1',
-              image_url: 'https://images.unsplash.com/photo-1553979459-d2229ba7433b?q=80&w=800&auto=format&fit=crop'
-            }
-          ];
-        }
-
         // Ensure 'all' category is always present
         const categoriesWithAll = [
           { id: 'all', name: 'Todos', icon: '🍽️' },
-          ...finalCats
+          ...cats
         ];
         
         setCategories(categoriesWithAll);
-        setProducts(finalProds);
+        setProducts(prods);
       } catch (err) {
         console.error("Error loading storefront data", err);
       } finally {

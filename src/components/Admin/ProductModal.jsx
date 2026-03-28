@@ -2,11 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { X, Plus, Trash2, Image as ImageIcon, Search } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const ProductModal = ({ isOpen, onClose, onSave, product }) => {
+const ProductModal = ({ isOpen, onClose, onSave, product, categories = [] }) => {
   const [formData, setFormData] = useState({
     sku: '',
     name: '',
-    category: 'Hamburguesas',
+    category: categories.length > 0 ? categories[0].name : '',
+    category_id: categories.length > 0 ? categories[0].id : '',
     price: 0,
     description: '',
     is_available: true,
@@ -36,6 +37,8 @@ const ProductModal = ({ isOpen, onClose, onSave, product }) => {
       setFormData({
         ...product,
         sku: product.sku || '',
+        category: product.category || (categories.length > 0 ? categories[0].name : ''),
+        category_id: product.category_id || (categories.length > 0 ? categories[0].id : ''),
         images: product.images || (product.image_url ? [product.image_url] : []),
         modifiers: product.modifiers || []
       });
@@ -43,7 +46,8 @@ const ProductModal = ({ isOpen, onClose, onSave, product }) => {
       setFormData({
         sku: '',
         name: '',
-        category: 'Hamburguesas',
+        category: categories.length > 0 ? categories[0].name : '',
+        category_id: categories.length > 0 ? categories[0].id : '',
         price: 0,
         description: '',
         is_available: true,
@@ -51,7 +55,7 @@ const ProductModal = ({ isOpen, onClose, onSave, product }) => {
         modifiers: []
       });
     }
-  }, [product, isOpen]);
+  }, [product, isOpen, categories]);
 
   const handleAddImage = () => {
     if (newImage) {
@@ -140,13 +144,16 @@ const ProductModal = ({ isOpen, onClose, onSave, product }) => {
                 <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest px-1">Categoría</label>
                 <select 
                   className="w-full bg-zinc-50 border border-zinc-200 p-3.5 rounded-2xl outline-none focus:ring-2 focus:ring-primary font-bold transition-all appearance-none"
-                  value={formData.category}
-                  onChange={e => setFormData({...formData, category: e.target.value})}
+                  value={formData.category_id}
+                  onChange={e => {
+                    const selectedCat = categories.find(c => c.id === e.target.value);
+                    setFormData({...formData, category_id: e.target.value, category: selectedCat?.name || ''});
+                  }}
                 >
-                  <option>Hamburguesas</option>
-                  <option>Pizzas</option>
-                  <option>Bebidas</option>
-                  <option>Postres</option>
+                  <option value="" disabled>Selecciona una categoría</option>
+                  {categories.map(c => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
                 </select>
               </div>
               <div className="space-y-1">

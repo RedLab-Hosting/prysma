@@ -34,7 +34,7 @@ const LocationPicker = ({ position, setPosition }) => {
 };
 
 const AdminDashboardView = () => {
-  const { tenant, productService, orderService } = useTenant();
+  const { tenant, productService, orderService, categoryService } = useTenant();
   const [activeTab, setActiveTab] = useState('pedidos');
   const [exchangeRate, setExchangeRate] = useState({ rate: 36.50, mode: 'auto', currency_code: 'USD' });
   const [products, setProducts] = useState([]);
@@ -46,6 +46,9 @@ const AdminDashboardView = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
+  const [categories, setCategories] = useState([]);
+  const [newCategoryName, setNewCategoryName] = useState('');
+  const [isNewCategoryOpen, setIsNewCategoryOpen] = useState(false);
   const [sortConfig, setSortConfig] = useState({ key: 'name', direction: 'asc' });
   const [orderStatusFilter, setOrderStatusFilter] = useState('entrantes');
 
@@ -121,9 +124,13 @@ const AdminDashboardView = () => {
       const rate = await exchangeRateService.getRate(tenant.id);
       if (rate) setExchangeRate(rate);
 
-      // Load products
-      const productsData = await productService.getAll();
-      setProducts(productsData || []);
+      // Load categories and products
+      const [catsData, prodsData] = await Promise.all([
+        categoryService.getAll(),
+        productService.getAll()
+      ]);
+      setCategories(catsData || []);
+      setProducts(prodsData || []);
 
       // Load orders
       const ordersData = await orderService.getAll();
@@ -170,24 +177,53 @@ const AdminDashboardView = () => {
     }
   };
 
-  const handleSaveProduct = (formData) => {
-    if (editingProduct) {
-      setProducts(products.map(p => p.id === editingProduct.id ? { ...formData, id: p.id } : p));
-    } else {
-      setProducts([...products, { ...formData, id: `p${Date.now()}` }]);
+  const handleCreateCategory = async () => {
+    if (!newCategoryName.trim() || !tenant?.id) return;
+    try {
+      const cat = await categoryService.create({ name: newCategoryName.trim(), tenant_id: tenant.id });
+      setCategories([...categories, cat]);
+      setNewCategoryName('');
+      setIsNewCategoryOpen(false);
+    } catch (err) {
+      alert("Error creando categoría: " + err.message);
     }
-    setIsProductModalOpen(false);
-    setEditingProduct(null);
   };
 
-  const handleDeleteProduct = (id) => {
+  const handleSaveProduct = async (formData) => {
+    try {
+      if (editingProduct) {
+        const updated = await productService.update(editingProduct.id, formData);
+        setProducts(products.map(p => p.id === editingProduct.id ? updated : p));
+      } else {
+        const created = await productService.create({ ...formData, tenant_id: tenant?.id });
+        setProducts([...products, created]);
+      }
+      setIsProductModalOpen(false);
+      setEditingProduct(null);
+    } catch (err) {
+      alert('Error guardando producto: ' + err.message);
+    }
+  };
+
+  const handleDeleteProduct = async (id) => {
     if (window.confirm('¿Estás seguro de eliminar este producto?')) {
-      setProducts(products.filter(p => p.id !== id));
+      try {
+        await productService.delete(id);
+        setProducts(products.filter(p => p.id !== id));
+      } catch (err) {
+        alert('Error eliminando producto: ' + err.message);
+      }
     }
   };
 
-  const toggleAvailability = (id) => {
-    setProducts(products.map(p => p.id === id ? { ...p, is_available: !p.is_available } : p));
+  const toggleAvailability = async (id) => {
+    try {
+      const product = products.find(p => p.id === id);
+      const updated = await productService.update(id, { is_available: !product.is_available });
+      setProducts(products.map(p => p.id === id ? { ...p, is_available: updated.is_available } : p));
+    } catch (err) {
+      alert('Error actualizando disponibilidad: ' + err.message);
+    }
   };
 
   const handleSort = (key) => {
@@ -547,28 +583,53 @@ const AdminDashboardView = () => {
                 </div>
               </div>
 
-              <div className="flex flex-col sm:flex-row gap-4">
-                <div className="relative group">
-                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400 group-focus-within:text-primary transition-colors" size={16} />
-                  <input 
-                    type="text"
-                    placeholder="Buscar producto..."
-                    className="pl-12 pr-6 py-3 bg-white border border-zinc-200 rounded-2xl outline-none focus:ring-2 focus:ring-primary w-full sm:w-64 transition-all font-bold text-xs"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                  />
+                <div className="flex gap-2 w-full sm:w-auto">
+                  <button 
+                    onClick={() => setIsNewCategoryOpen(true)}
+                    className="bg-zinc-100 text-zinc-900 px-4 flex-1 sm:flex-none py-3 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-zinc-200 active:scale-95 transition-all"
+                  >
+                    + Categoría
+                  </button>
+                  <button 
+                    onClick={() => {
+                      setEditingProduct(null);
+                      setIsProductModalOpen(true);
+                    }}
+                    className="bg-primary text-white px-6 py-3 flex-1 sm:flex-none rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-all" 
+                    style={{ backgroundColor: 'var(--primary-color)' }}
+                  >
+                    <Plus size={16} strokeWidth={3} /> Producto
+                  </button>
                 </div>
-                <button 
-                  onClick={() => {
-                    setEditingProduct(null);
-                    setIsProductModalOpen(true);
-                  }}
-                  className="bg-primary text-white px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-3 hover:scale-[1.02] active:scale-95 transition-all" 
-                  style={{ backgroundColor: 'var(--primary-color)' }}
-                >
-                  <Plus size={16} strokeWidth={3} /> Nuevo Producto
-                </button>
-              </div>
+
+              {/* New Category Inline Form */}
+              <AnimatePresence>
+                {isNewCategoryOpen && (
+                  <motion.div 
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="mt-4 flex flex-col sm:flex-row gap-3 bg-zinc-50 p-4 rounded-2xl border border-zinc-200"
+                  >
+                    <input 
+                      type="text"
+                      placeholder="Nombre de nueva categoría (ej: Promociones)"
+                      className="flex-1 bg-white border border-zinc-200 p-3 rounded-xl outline-none focus:ring-2 focus:ring-primary font-bold text-sm"
+                      value={newCategoryName}
+                      onChange={(e) => setNewCategoryName(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && handleCreateCategory()}
+                    />
+                    <div className="flex gap-2">
+                      <button onClick={() => setIsNewCategoryOpen(false)} className="p-3 text-zinc-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all">
+                        <X size={20} />
+                      </button>
+                      <button onClick={handleCreateCategory} className="px-6 py-3 bg-zinc-900 text-white rounded-xl font-black text-xs uppercase hover:bg-black transition-all">
+                        Guardar
+                      </button>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </header>
 
             <div className="bg-white rounded-[32px] border border-zinc-100 overflow-hidden">
@@ -922,6 +983,7 @@ const AdminDashboardView = () => {
         onClose={() => setIsProductModalOpen(false)}
         product={editingProduct}
         onSave={handleSaveProduct}
+        categories={categories}
       />
 
       {/* Embedded Receipt Ticket Modal explicitly for Admin */}
